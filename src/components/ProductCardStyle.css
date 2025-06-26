@@ -1,0 +1,12 @@
+.view:hover{
+    scale: 1.1;
+}
+.cart:hover{
+    scale: 1.1;
+}
+.button:hover{
+    scale: 1.2;
+}
+.thumbnail:hover{
+    scale: 1.2;
+}
