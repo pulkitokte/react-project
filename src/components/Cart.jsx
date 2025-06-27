@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { Plus, Minus, Trash2 } from "lucide-react";
 
 export default function Cart({
   cartItems,
@@ -38,15 +39,26 @@ export default function Cart({
                 <h2>{item.title}</h2>
                 <p>Price: ₹{item.price}</p>
                 <p>Quantity: {item.quantity}</p>
-                <button onClick={() => onIncrease(item.id)} style={styles.btn}>
-                  +
-                </button>
-                <button onClick={() => onDecrease(item.id)} style={styles.btn}>
-                  -
-                </button>
-                <button onClick={() => onRemove(item.id)} style={styles.remBtn}>
-                  Remove
-                </button>
+                <div style={{ display: "flex", gap: "10px", margin: "10px 0" }}>
+                  <button
+                    onClick={() => onIncrease(item.id)}
+                    style={styles.btn}
+                  >
+                    <Plus size={16} />
+                  </button>
+                  <button
+                    onClick={() => onDecrease(item.id)}
+                    style={styles.btn}
+                  >
+                    <Minus size={16} />
+                  </button>
+                  <button
+                    onClick={() => onRemove(item.id)}
+                    style={styles.remBtn}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -74,44 +86,51 @@ export default function Cart({
 }
 
 const styles = {
+  cart: {
+    textAlign: "center",
+    fontSize: "32px",
+    marginBottom: "20px",
+  },
   cartItem: {
     display: "flex",
     alignItems: "center",
-    margin: "10px 0",
     gap: "20px",
-    borderBottom: "1px solid #ccc",
-    paddingBottom: "10px",
-    borderRadius: "6px",
+    marginBottom: "20px",
     padding: "15px",
+    borderRadius: "8px",
+    boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
   },
   img: {
-    width: "80px",
-    height: "80px",
+    width: "100px",
+    height: "100px",
     objectFit: "contain",
-  },
-  cart: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
+    border: "1px solid #ccc",
+    padding: "5px",
+    borderRadius: "5px",
+    backgroundColor: "#fff",
   },
   btn: {
-    margin: "5px",
-    padding: "5px 8px",
+    padding: "8px 10px",
+    border: "1px solid #ccc",
     borderRadius: "5px",
-    border: "none",
-    outline: "none",
+    backgroundColor: "#eee",
+    cursor: "pointer",
   },
   remBtn: {
-    margin: "10px",
-    padding: "5px",
-    border: "none",
-    outline: "none",
+    padding: "8px 10px",
+    border: "1px solid red",
     borderRadius: "5px",
-    backgroundColor: "red",
+    backgroundColor: "#ffdddd",
+    cursor: "pointer",
+    color: "red",
+  },
+  total: {
+    textAlign: "right",
+    fontSize: "24px",
+    marginRight: "30px",
   },
   proceed: {
     display: "flex",
     justifyContent: "center",
-    textDecoration: "none",
   },
 };

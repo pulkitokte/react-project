@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import { ScrollText } from "lucide-react";
 
 export default function CustomerOrders() {
   const [orders, setOrders] = useState([]);
@@ -26,7 +27,9 @@ export default function CustomerOrders() {
 
   return (
     <div style={styles.wrapper}>
-      <h2>🧾 My Orders</h2>
+      <h2 style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+        <ScrollText size={28} /> My Orders
+      </h2>
 
       {orders.length === 0 ? (
         <p>You haven’t placed any orders yet.</p>

@@ -59,7 +59,7 @@ export default function Home({
         backgroundColor: darkMode ? "#121212" : "#fff",
         color: darkMode ? "#fff" : "#000",
         minHeight: "100vh",
-        marginTop: "120px",
+        //marginTop: "120px",
       }}
     >
       {username && (

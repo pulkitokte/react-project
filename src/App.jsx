@@ -12,9 +12,12 @@ import AdminApp from "./admin/AdminApp";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Language from "./pages/Language"; // ✅ Update path based on your project
-import CustomerOrders from "./pages/CustomerOrders"; 
-
-
+import CustomerOrders from "./pages/CustomerOrders";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "./firebase";
+import Login from "./pages/LoginForm";
+import SignupForm from "./pages/SignupForm";
+import LoginForm from "./pages/LoginForm";
 
 
 export default function App() {
@@ -28,7 +31,7 @@ export default function App() {
       return [];
     }
   });
-  
+
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [darkMode, setDarkMode] = useState(false);
@@ -47,7 +50,6 @@ export default function App() {
       return [];
     }
   });
-  
 
   const toggleFavorite = (product) => {
     const exists = wishlist.find((item) => item.id === product.id);
@@ -77,13 +79,12 @@ export default function App() {
       setCart([...cart, { ...updatedProduct, quantity: 1 }]);
     }
   };
-  
 
   const removeFromCart = (id) => {
     setCart(cart.filter((item) => item.id !== id));
     toast.info("🗑️ Item removed from cart");
   };
-  
+
   const increaseQuantity = (id) =>
     setCart(
       cart.map((item) =>
@@ -99,6 +100,14 @@ export default function App() {
       )
     );
 
+  const [user, setUser] = useState(null);
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (firebaseUser) => {
+      setUser(firebaseUser);
+    });
+    return () => unsub();
+  })
+  
   return (
     <div
       style={{
@@ -109,16 +118,19 @@ export default function App() {
       }}
     >
       <Navbar
+        user={user}
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
         setSelectedCategory={setSelectedCategory}
         darkMode={darkMode}
         setDarkMode={setDarkMode}
       />
-      <CategoryNavbar
-        onSelectCategory={setSelectedCategory}
-        darkMode={darkMode}
-      />
+      <div>
+        <CategoryNavbar
+          onSelectCategory={setSelectedCategory}
+          darkMode={darkMode}
+        />
+      </div>
       <Routes>
         <Route
           path="/"
@@ -157,6 +169,8 @@ export default function App() {
         <Route path="/admin/*" element={<AdminApp />} />
         <Route path="/language" element={<Language />} />
         <Route path="/orders" element={<CustomerOrders />} />
+        <Route path="/login" element={<LoginForm />} />
+        <Route path="/signup" element={<SignupForm />} />
 
         <Route
           path="/wishlist"
@@ -173,4 +187,3 @@ export default function App() {
     </div>
   );
 }
-

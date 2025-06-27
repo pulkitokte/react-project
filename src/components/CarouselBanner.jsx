@@ -3,7 +3,7 @@ import { Carousel } from "react-responsive-carousel";
 
 export default function CarouselBanner() {
     return (
-      <div style={{ maxWidth: "100%", margin: "20px auto" }}>
+      <div style={{ maxWidth: "100%", margin: "10px"}}>
         <Carousel
           autoPlay
           infiniteLoop

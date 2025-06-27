@@ -46,10 +46,10 @@ const styles = {
   // In CategoryNavbar.jsx styles
   container: {
     position: "fixed",
-    top: "80px", // right below Navbar
+    top: "120px", // right below Navbar
     left: 0,
     right: 0,
-    zIndex: 999,
+    zIndex: 1,
     backgroundColor: "#131921",
     padding: "10px",
     display: "flex",

@@ -1,18 +1,25 @@
 import { useNavigate } from "react-router-dom";
-import { ShoppingCart, Search } from "lucide-react";
+import { signOut } from "firebase/auth";
+import { ShoppingCart, Search, Sun, Moon } from "lucide-react";
+import { auth } from "../firebase";
 import { useLanguage } from "../context/LanguageContext";
 
 export default function Navbar({
   searchTerm,
+  user, // ✅ receive from parent
   setSearchTerm,
   setSelectedCategory,
   darkMode,
   setDarkMode,
 }) {
   const navigate = useNavigate();
-
-  // ✅ use language context
   const { language, setLanguage, t } = useLanguage();
+
+  const handleLogout = () => {
+    signOut(auth);
+    localStorage.removeItem("username");
+    navigate("/");
+  };
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -46,55 +53,67 @@ export default function Navbar({
           onChange={(e) => setSearchTerm(e.target.value)}
           style={styles.searchInput}
         />
-        <button className="searchIcon" type="submit" style={styles.searchBtn}>
+        <button type="submit" style={styles.searchBtn}>
           <Search size={24} color="white" />
         </button>
       </form>
 
-      <select
-        value={language}
-        onChange={(e) => setLanguage(e.target.value)}
-        style={styles.dropdown}
-      >
-        <option value="en">En</option>
-        <option value="hi">हिंदी</option>
-      </select>
-
       <div style={styles.navLinks}>
-        <button
-          onClick={() => navigate("/cart", { state: { showLoader: true } })}
-          style={styles.link1}
+        <select
+          value={language}
+          onChange={(e) => setLanguage(e.target.value)}
+          style={styles.dropdown}
         >
-          {t.cart}
-        </button>
+          <option value="en">En</option>
+          <option value="hi">हिंदी</option>
+        </select>
 
-        <button onClick={() => navigate("/wishlist")} style={styles.link2}>
-          {t.wishlist}
-        </button>
-
-        <button
-          onClick={() => navigate("/account", { state: { showLoader: true } })}
-          style={styles.link1}
-        >
-          {t.account}
-        </button>
-        
-        <button onClick={() => navigate("/orders")} style={styles.link1}>
-          My Orders
-        </button>
+        {user ? (
+          <>
+            <button onClick={() => navigate("/cart")} style={styles.link1}>
+              {t.cart}
+            </button>
+            <button onClick={() => navigate("/wishlist")} style={styles.link1}>
+              {t.wishlist}
+            </button>
+            <button onClick={() => navigate("/orders")} style={styles.link1}>
+              My Orders
+            </button>
+            <button onClick={handleLogout} style={styles.link1}>
+              Sign Out
+            </button>
+          </>
+        ) : (
+          <>
+            <button onClick={() => navigate("/login")} style={styles.link1}>
+              Login
+            </button>
+            <button onClick={() => navigate("/signup")} style={styles.link1}>
+              Sign Up
+            </button>
+          </>
+        )}
 
         <button
           onClick={() => setDarkMode(!darkMode)}
           style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
             backgroundColor: darkMode ? "#333" : "#FFA41C",
             color: "#fff",
             border: "none",
-            padding: "12px",
-            borderRadius: "4px",
+            padding: "8px",
+            borderRadius: "6px",
             fontWeight: "bold",
+            fontSize: "14px",
+            // height: "40px",
+            //margin: "0 6px",
+            cursor: "pointer",
           }}
         >
-          {darkMode ? "🌙 Dark" : "🔆 Light"}
+          {darkMode ? <Moon size={18} /> : <Sun size={18} />}
+          {darkMode ? "Dark" : "Light"}
         </button>
       </div>
     </header>
@@ -107,15 +126,17 @@ const styles = {
     top: 0,
     left: 0,
     right: 0,
-    zIndex: 1000,
-    height: "60px",
+    width: "100%",
+    zIndex: 100,
+    height: "100px",
     display: "flex",
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "space-around",
     padding: "10px 20px",
     backgroundColor: "#000",
     color: "white",
     flexWrap: "wrap",
+    //border: "2px solid red",
   },
   logo: {
     fontSize: "1.5rem",
@@ -133,7 +154,7 @@ const styles = {
     display: "flex",
     flex: 1,
     margin: "0 20px",
-    maxWidth: "900px",
+    maxWidth: "50%",
   },
   searchInput: {
     flex: 1,
@@ -161,18 +182,11 @@ const styles = {
     borderRadius: "4px",
     padding: "10px",
     cursor: "pointer",
-  },
-  link2: {
-    border: "none",
-    backgroundColor: "#febd69",
-    color: "white",
-    borderRadius: "4px",
-    padding: "10px",
-    cursor: "pointer",
+    fontWeight: "bold",
   },
   dropdown: {
-    width: "70px",
-    padding: "6px",
+    width: "60px",
+    padding: "9px",
     borderRadius: "4px",
     border: "none",
     backgroundColor: "#febd69",

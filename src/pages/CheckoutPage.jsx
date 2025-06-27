@@ -40,6 +40,12 @@ export default function CheckoutPage({ cartItems, setCartItems }) {
       timestamp: Date.now(),
     };
 
+    localStorage.setItem("userAddress", JSON.stringify({
+      name: currentOrder.name,
+      address: currentOrder.address,
+      phone: currentOrder.phone
+    }));
+
     // Save new order
     const updatedOrders = [...previousOrders, currentOrder];
     setPreviousOrders(updatedOrders);
