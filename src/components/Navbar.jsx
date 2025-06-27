@@ -1,7 +1,6 @@
 import { useNavigate } from "react-router-dom";
-import { ShoppingCart } from "lucide-react";
-import { Search } from "lucide-react";
-import { useState } from "react";
+import { ShoppingCart, Search } from "lucide-react";
+import { useLanguage } from "../context/LanguageContext";
 
 export default function Navbar({
   searchTerm,
@@ -10,8 +9,10 @@ export default function Navbar({
   darkMode,
   setDarkMode,
 }) {
-  const [language, setLanguage] = useState("en");
   const navigate = useNavigate();
+
+  // ✅ use language context
+  const { language, setLanguage, t } = useLanguage();
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -23,7 +24,7 @@ export default function Navbar({
       style={{
         ...styles.navbar,
         backgroundColor: darkMode ? "#121212" : "#000",
-        color: "#fff"
+        color: "#fff",
       }}
     >
       <button
@@ -40,13 +41,13 @@ export default function Navbar({
       <form onSubmit={handleSearch} style={styles.searchForm}>
         <input
           type="text"
-          placeholder="Search for product..."
+          placeholder={t.searchPlaceholder}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           style={styles.searchInput}
         />
         <button className="searchIcon" type="submit" style={styles.searchBtn}>
-          <Search size={24} color="white"/>
+          <Search size={24} color="white" />
         </button>
       </form>
 
@@ -57,9 +58,6 @@ export default function Navbar({
       >
         <option value="en">En</option>
         <option value="hi">हिंदी</option>
-        <option value="es">Español</option>
-        <option value="fr">Français</option>
-        <option value="de">Deutsch</option>
       </select>
 
       <div style={styles.navLinks}>
@@ -67,18 +65,22 @@ export default function Navbar({
           onClick={() => navigate("/cart", { state: { showLoader: true } })}
           style={styles.link1}
         >
-          Cart
+          {t.cart}
         </button>
 
         <button onClick={() => navigate("/wishlist")} style={styles.link2}>
-          Wishlist
+          {t.wishlist}
         </button>
 
         <button
           onClick={() => navigate("/account", { state: { showLoader: true } })}
           style={styles.link1}
         >
-          Account
+          {t.account}
+        </button>
+        
+        <button onClick={() => navigate("/orders")} style={styles.link1}>
+          My Orders
         </button>
 
         <button
@@ -87,8 +89,9 @@ export default function Navbar({
             backgroundColor: darkMode ? "#333" : "#FFA41C",
             color: "#fff",
             border: "none",
-            padding: "8px",
+            padding: "12px",
             borderRadius: "4px",
+            fontWeight: "bold",
           }}
         >
           {darkMode ? "🌙 Dark" : "🔆 Light"}
@@ -99,14 +102,13 @@ export default function Navbar({
 }
 
 const styles = {
-  // In Navbar.jsx styles
   navbar: {
     position: "fixed",
     top: 0,
     left: 0,
     right: 0,
-    zIndex: 1000, // ensure it's above other elements
-    height: "60px", // consistent height
+    zIndex: 1000,
+    height: "60px",
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
@@ -115,16 +117,17 @@ const styles = {
     color: "white",
     flexWrap: "wrap",
   },
-
   logo: {
-    fontSize: "1.8rem",
+    fontSize: "1.5rem",
     color: "white",
     textDecoration: "none",
     fontWeight: "bold",
     background: "none",
     border: "none",
     cursor: "pointer",
-    
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
   },
   searchForm: {
     display: "flex",
@@ -138,8 +141,6 @@ const styles = {
     borderRadius: "4px 0 0 4px",
     border: "none",
     outline: "none",
-    fontSize:"1rem",
-   
   },
   searchBtn: {
     padding: "8px 12px",
@@ -151,17 +152,15 @@ const styles = {
   navLinks: {
     display: "flex",
     gap: "10px",
+    alignItems: "center",
   },
   link1: {
-    
     border: "none",
     backgroundColor: "#febd69",
     color: "white",
     borderRadius: "4px",
     padding: "10px",
     cursor: "pointer",
-    width: "70px",
-    fontWeight:"bold",
   },
   link2: {
     border: "none",
@@ -170,11 +169,9 @@ const styles = {
     borderRadius: "4px",
     padding: "10px",
     cursor: "pointer",
-    fontWeight: "bold",
   },
   dropdown: {
-    height:"45px",
-    width: "60px",
+    width: "70px",
     padding: "6px",
     borderRadius: "4px",
     border: "none",
@@ -182,7 +179,5 @@ const styles = {
     color: "#232F3E",
     fontWeight: "bold",
     cursor: "pointer",
-    outline:"none",
   },
-
 };

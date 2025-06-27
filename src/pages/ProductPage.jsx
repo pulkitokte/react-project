@@ -56,7 +56,15 @@ export default function ProductPage({ addToCart }) {
           <strong>Category:</strong> {product.category}
         </p>
         <h3>₹ {product.price}</h3>
-        <button onClick={() => addToCart(product)} style={styles.btn}>
+        <button
+          onClick={() =>
+            addToCart({
+              ...product,
+              image: product.thumbnail, // 👈 explicitly add image field
+            })
+          }
+          style={styles.btn}
+        >
           Add to Cart
         </button>
       </div>

@@ -14,6 +14,7 @@ export default function Home({
 }) {
   const [allProducts, setAllProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [username, setUsername] = useState("");
 
   useEffect(() => {
     axios.get("https://dummyjson.com/products?limit=100").then((res) => {
@@ -22,15 +23,34 @@ export default function Home({
     });
   }, []);
 
+  useEffect(() => {
+    const storedName = localStorage.getItem("username");
+    if (storedName) {
+      setUsername(storedName);
+
+      // Optional: Clear the welcome message after 5 seconds
+      const timer = setTimeout(() => {
+        setUsername("");
+        localStorage.removeItem("username");
+      }, 5000);
+
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
   const categoryFiltered =
     selectedCategory === "all"
       ? allProducts
-      : allProducts.filter((p) => Array.isArray(selectedCategory)? selectedCategory.includes(p.category):p.category === selectedCategory );
+      : allProducts.filter((p) =>
+          Array.isArray(selectedCategory)
+            ? selectedCategory.includes(p.category)
+            : p.category === selectedCategory
+        );
 
   const filteredProducts = categoryFiltered.filter((product) =>
     product?.title?.toLowerCase().includes(searchTerm.toLowerCase())
   );
-   
+
   if (loading) return <Loading />;
 
   return (
@@ -42,7 +62,25 @@ export default function Home({
         marginTop: "120px",
       }}
     >
+      {username && (
+        <div
+          style={{
+            backgroundColor: "#d4edda",
+            color: "#155724",
+            padding: "10px 20px",
+            margin: "20px",
+            borderRadius: "8px",
+            fontWeight: "bold",
+            textAlign: "center",
+          }}
+        >
+          🎉 Congratulations! You've been logged in, Welcome{" "}
+          <strong>{username}</strong>
+        </div>
+      )}
+
       <CarouselBanner />
+
       <div
         className="product-grid"
         style={{
@@ -55,6 +93,7 @@ export default function Home({
       >
         {filteredProducts.map((product) => (
           <ProductCard
+            key={product.id}
             product={product}
             addToCart={addToCart}
             toggleFavorite={toggleFavorite}

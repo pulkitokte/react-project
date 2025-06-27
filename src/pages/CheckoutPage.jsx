@@ -1,17 +1,67 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
-export default function CheckoutPage({ cartItems }) {
+export default function CheckoutPage({ cartItems, setCartItems }) {
+  const navigate = useNavigate();
+
+  const [previousOrders, setPreviousOrders] = useState(() => {
+    const saved = localStorage.getItem("orders");
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [formData, setFormData] = useState({
+    name: "",
+    address: "",
+    phone: "",
+  });
+
   const total = cartItems.reduce(
-    (sum, items) => sum + items.price * items.quantity,
+    (sum, item) => sum + item.price * item.quantity,
     0
   );
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    const currentOrder = {
+      name: formData.name.trim(),
+      address: formData.address.trim(),
+      phone: formData.phone.trim(),
+      cart: cartItems.map((item) => ({
+        ...item,
+        image: item.image || item.thumbnail, // ensure image
+      })),
+      timestamp: Date.now(),
+    };
+
+    // Save new order
+    const updatedOrders = [...previousOrders, currentOrder];
+    setPreviousOrders(updatedOrders);
+    localStorage.setItem("orders", JSON.stringify(updatedOrders));
+
+    // Clear cart
+    setCartItems([]);
+    localStorage.removeItem("cart");
+
+    // ✅ Show toast and navigate after it closes
+    toast.success("✅ Order placed successfully!", {
+      onClose: () => navigate("/orders"), // 👈 navigate after toast finishes
+      autoClose: 3000, // 3 seconds
+    });
+  };
 
   return (
     <div style={{ padding: "20px" }}>
       <h2>🧾 Checkout</h2>
 
       {cartItems.length === 0 ? (
-        <p>Cart is empty..</p>
+        <p>Cart is empty.</p>
       ) : (
         <>
           <div style={{ marginBottom: "20px" }}>
@@ -23,28 +73,32 @@ export default function CheckoutPage({ cartItems }) {
             ))}
           </div>
           <h3>Total: ₹{total.toFixed(2)}</h3>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              toast.success("✅ Order placed successfully!");
-            }}
-          >
+          <form onSubmit={handleSubmit}>
             <h4>Shipping Details</h4>
             <input
               type="text"
+              name="name"
               placeholder="Full Name"
+              value={formData.name}
+              onChange={handleInputChange}
               required
               style={styles.input}
             />
             <input
               type="text"
+              name="address"
               placeholder="Address"
+              value={formData.address}
+              onChange={handleInputChange}
               required
               style={styles.input}
             />
             <input
               type="tel"
+              name="phone"
               placeholder="Phone Number"
+              value={formData.phone}
+              onChange={handleInputChange}
               required
               style={styles.input}
             />
@@ -59,20 +113,22 @@ export default function CheckoutPage({ cartItems }) {
     </div>
   );
 }
+
 const styles = {
   input: {
     display: "block",
-    padding: "8px",
-    margin: "8px 0",
     width: "100%",
-    maxWidth: "400px",
+    marginBottom: "10px",
+    padding: "10px",
+    fontSize: "16px",
   },
   button: {
-    padding: "10px 20px",
     backgroundColor: "#FFA41C",
+    color: "#fff",
     border: "none",
-    color: "white",
-    cursor: "pointer",
+    padding: "12px 20px",
     borderRadius: "4px",
+    fontWeight: "bold",
+    cursor: "pointer",
   },
 };

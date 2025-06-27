@@ -1,16 +1,27 @@
 import { useState } from "react";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { auth } from "../firebase";
 
 export default function SignupForm({ onSignup }) {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      alert("Signup successful!");
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password,
+      );
+      await updateProfile(userCredential.user, {
+        displayName: name,
+      });
+
+      localStorage.setItem("username", name);
+
+      alert("SignUp Successful!")
       onSignup(); // go back to login
     } catch (error) {
       alert("Signup failed: " + error.message);

@@ -11,6 +11,9 @@ import WishlistPage from "./pages/WishlistPage";
 import AdminApp from "./admin/AdminApp";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import Language from "./pages/Language"; // ✅ Update path based on your project
+import CustomerOrders from "./pages/CustomerOrders"; 
+
 
 
 
@@ -56,19 +59,25 @@ export default function App() {
   };
 
   const addToCart = (product) => {
-    const exists = cart.find((item) => item.id === product.id);
+    const updatedProduct = {
+      ...product,
+      image: product.image || product.thumbnail, // ensure 'image' is set
+    };
+
+    const exists = cart.find((item) => item.id === updatedProduct.id);
     if (exists) {
       setCart(
         cart.map((item) =>
-          item.id === product.id
+          item.id === updatedProduct.id
             ? { ...item, quantity: item.quantity + 1 }
             : item
         )
       );
     } else {
-      setCart([...cart, { ...product, quantity: 1 }]);
+      setCart([...cart, { ...updatedProduct, quantity: 1 }]);
     }
   };
+  
 
   const removeFromCart = (id) => {
     setCart(cart.filter((item) => item.id !== id));
@@ -93,7 +102,7 @@ export default function App() {
   return (
     <div
       style={{
-        paddingTop:"120px",
+        paddingTop: "120px",
         backgroundColor: darkMode ? "#121212" : "#fff",
         color: darkMode ? "#fff" : "#000",
         minHeight: "100vh",
@@ -141,8 +150,13 @@ export default function App() {
           }
         />
         <Route path="/account" element={<AccountPage />} />
-        <Route path="/checkout" element={<CheckoutPage cartItems={cart} />} />
+        <Route
+          path="/checkout"
+          element={<CheckoutPage cartItems={cart} setCartItems={setCart} />}
+        />
         <Route path="/admin/*" element={<AdminApp />} />
+        <Route path="/language" element={<Language />} />
+        <Route path="/orders" element={<CustomerOrders />} />
 
         <Route
           path="/wishlist"
