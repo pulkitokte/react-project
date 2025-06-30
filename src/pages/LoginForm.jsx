@@ -3,10 +3,12 @@ import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebase";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
@@ -19,12 +21,11 @@ export default function LoginForm() {
       );
       const user = userCredential.user;
 
-      // Save displayName (fallback to email username if not available)
       const fallbackName = user.email.split("@")[0];
       localStorage.setItem("username", user.displayName || fallbackName);
 
       toast.success("🔓 Login successful!");
-      navigate("/"); // Redirect after login
+      navigate("/");
     } catch (error) {
       toast.error("❌ Login failed: " + error.message);
     }
@@ -43,14 +44,23 @@ export default function LoginForm() {
         required
       />
 
-      <input
-        style={styles.pswd}
-        type="password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        placeholder="Password"
-        required
-      />
+      <div style={styles.passwordField}>
+        <input
+          style={styles.pswd}
+          type={showPassword ? "text" : "password"}
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Password"
+          required
+        />
+        <button
+          type="button"
+          onClick={() => setShowPassword((prev) => !prev)}
+          style={styles.toggle}
+        >
+          {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+        </button>
+      </div>
 
       <button type="submit" style={styles.btn}>
         Login
@@ -81,6 +91,13 @@ const styles = {
     border: "1px solid #ccc",
     borderRadius: "5px",
     outline: "none",
+    width: "100%",
+  },
+  passwordField: {
+    position: "relative",
+    display: "flex",
+    alignItems: "center",
+    width:"110%",
   },
   pswd: {
     padding: "10px",
@@ -88,6 +105,14 @@ const styles = {
     border: "1px solid #ccc",
     borderRadius: "5px",
     outline: "none",
+    width: "100%",
+  },
+  toggle: {
+    position: "absolute",
+    right: "20px",
+    background: "none",
+    border: "none",
+    cursor: "pointer",
   },
   btn: {
     margin: "20px auto 0",

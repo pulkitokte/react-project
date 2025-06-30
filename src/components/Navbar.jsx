@@ -3,17 +3,20 @@ import { signOut } from "firebase/auth";
 import { ShoppingCart, Search, Sun, Moon } from "lucide-react";
 import { auth } from "../firebase";
 import { useLanguage } from "../context/LanguageContext";
+import { useState } from "react";
 
 export default function Navbar({
   searchTerm,
-  user, // ✅ receive from parent
   setSearchTerm,
   setSelectedCategory,
   darkMode,
   setDarkMode,
+  user,
+  products = [],
 }) {
   const navigate = useNavigate();
   const { language, setLanguage, t } = useLanguage();
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   const handleLogout = () => {
     signOut(auth);
@@ -24,6 +27,37 @@ export default function Navbar({
   const handleSearch = (e) => {
     e.preventDefault();
     console.log("Searching For...", searchTerm);
+    setShowSuggestions(false);
+  };
+
+  const handleSelectSuggestion = (title) => {
+    setSearchTerm(title);
+    setShowSuggestions(false);
+  };
+
+  const filteredSuggestions = products.filter((p) =>
+    p.title.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const highlightMatch = (text) => {
+    const index = text.toLowerCase().indexOf(searchTerm.toLowerCase());
+    if (index === -1 || searchTerm === "") return text;
+
+    return (
+      <>
+        {text.substring(0, index)}
+        <span
+          style={{
+            fontWeight: "bold",
+            backgroundColor: "yellow",
+            color: "#000",
+          }}
+        >
+          {text.substring(index, index + searchTerm.length)}
+        </span>
+        {text.substring(index + searchTerm.length)}
+      </>
+    );
   };
 
   return (
@@ -45,18 +79,39 @@ export default function Navbar({
         Amazon Clone
       </button>
 
-      <form onSubmit={handleSearch} style={styles.searchForm}>
-        <input
-          type="text"
-          placeholder={t.searchPlaceholder}
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          style={styles.searchInput}
-        />
-        <button type="submit" style={styles.searchBtn}>
-          <Search size={24} color="white" />
-        </button>
-      </form>
+      <div style={{ position: "relative", flex: 1, maxWidth: "50%" }}>
+        <form onSubmit={handleSearch} style={styles.searchForm}>
+          <input
+            type="text"
+            placeholder={t.searchPlaceholder}
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setShowSuggestions(true);
+            }}
+            style={styles.searchInput}
+          />
+          <button type="submit" style={styles.searchBtn}>
+            <Search size={24} color="white" />
+          </button>
+        </form>
+
+        {showSuggestions &&
+          searchTerm.trim() &&
+          filteredSuggestions.length > 0 && (
+            <div style={styles.suggestionBox}>
+              {filteredSuggestions.slice(0, 6).map((p) => (
+                <div
+                  key={p.id}
+                  style={styles.suggestionItem}
+                  onClick={() => handleSelectSuggestion(p.title)}
+                >
+                  {highlightMatch(p.title)}
+                </div>
+              ))}
+            </div>
+          )}
+      </div>
 
       <div style={styles.navLinks}>
         <select
@@ -107,8 +162,6 @@ export default function Navbar({
             borderRadius: "6px",
             fontWeight: "bold",
             fontSize: "14px",
-            // height: "40px",
-            //margin: "0 6px",
             cursor: "pointer",
           }}
         >
@@ -136,7 +189,6 @@ const styles = {
     backgroundColor: "#000",
     color: "white",
     flexWrap: "wrap",
-    //border: "2px solid red",
   },
   logo: {
     fontSize: "1.5rem",
@@ -152,23 +204,37 @@ const styles = {
   },
   searchForm: {
     display: "flex",
-    flex: 1,
-    margin: "0 20px",
-    maxWidth: "50%",
   },
   searchInput: {
-    flex: 1,
+    width: "100%",
     padding: "15px",
     borderRadius: "4px 0 0 4px",
     border: "none",
     outline: "none",
+    fontSize: "16px",
   },
   searchBtn: {
-    padding: "8px 12px",
+    padding: "0 16px",
+    backgroundColor: "#a46600",
     border: "none",
-    backgroundColor: "#febd69",
     borderRadius: "0 4px 4px 0",
     cursor: "pointer",
+  },
+  suggestionBox: {
+    position: "absolute",
+    top: "100%",
+    width: "100%",
+    backgroundColor: "#fff",
+    border: "1px solid #ccc",
+    borderTop: "none",
+    maxHeight: "200px",
+    overflowY: "auto",
+    zIndex: 999,
+  },
+  suggestionItem: {
+    padding: "10px",
+    cursor: "pointer",
+    borderBottom: "1px solid #eee",
   },
   navLinks: {
     display: "flex",
@@ -177,7 +243,7 @@ const styles = {
   },
   link1: {
     border: "none",
-    backgroundColor: "#febd69",
+    backgroundColor: "#a46600",
     color: "white",
     borderRadius: "4px",
     padding: "10px",
@@ -189,8 +255,9 @@ const styles = {
     padding: "9px",
     borderRadius: "4px",
     border: "none",
-    backgroundColor: "#febd69",
-    color: "#232F3E",
+    outline: "none",
+    backgroundColor: "#a46600",
+    color: "#fff",
     fontWeight: "bold",
     cursor: "pointer",
   },

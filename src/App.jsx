@@ -11,14 +11,12 @@ import WishlistPage from "./pages/WishlistPage";
 import AdminApp from "./admin/AdminApp";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import Language from "./pages/Language"; // ✅ Update path based on your project
+import Language from "./pages/Language";
 import CustomerOrders from "./pages/CustomerOrders";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "./firebase";
-import Login from "./pages/LoginForm";
-import SignupForm from "./pages/SignupForm";
 import LoginForm from "./pages/LoginForm";
-
+import SignupForm from "./pages/SignupForm";
 
 export default function App() {
   const [cart, setCart] = useState(() => {
@@ -32,14 +30,6 @@ export default function App() {
     }
   });
 
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  const [darkMode, setDarkMode] = useState(false);
-
-  useEffect(() => {
-    localStorage.setItem("cart", JSON.stringify(cart));
-  }, [cart]);
-
   const [wishlist, setWishlist] = useState(() => {
     const stored = localStorage.getItem("wishlist");
     try {
@@ -50,6 +40,31 @@ export default function App() {
       return [];
     }
   });
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [darkMode, setDarkMode] = useState(false);
+  const [user, setUser] = useState(null);
+  const [allProducts, setAllProducts] = useState([]); // ✅ new state
+
+  useEffect(() => {
+    localStorage.setItem("cart", JSON.stringify(cart));
+  }, [cart]);
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (firebaseUser) => {
+      setUser(firebaseUser);
+    });
+    return () => unsub();
+  }, []);
+
+  // ✅ Fetch products on mount
+  useEffect(() => {
+    fetch("https://fakestoreapi.com/products") // or your own API
+      .then((res) => res.json())
+      .then((data) => setAllProducts(data))
+      .catch((err) => console.error("Error fetching products:", err));
+  }, []);
 
   const toggleFavorite = (product) => {
     const exists = wishlist.find((item) => item.id === product.id);
@@ -63,7 +78,7 @@ export default function App() {
   const addToCart = (product) => {
     const updatedProduct = {
       ...product,
-      image: product.image || product.thumbnail, // ensure 'image' is set
+      image: product.image || product.thumbnail,
     };
 
     const exists = cart.find((item) => item.id === updatedProduct.id);
@@ -91,6 +106,7 @@ export default function App() {
         item.id === id ? { ...item, quantity: item.quantity + 1 } : item
       )
     );
+
   const decreaseQuantity = (id) =>
     setCart(
       cart.map((item) =>
@@ -100,14 +116,6 @@ export default function App() {
       )
     );
 
-  const [user, setUser] = useState(null);
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser);
-    });
-    return () => unsub();
-  })
-  
   return (
     <div
       style={{
@@ -118,6 +126,7 @@ export default function App() {
       }}
     >
       <Navbar
+        products={allProducts} // ✅ passed correctly now
         user={user}
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
@@ -125,12 +134,12 @@ export default function App() {
         darkMode={darkMode}
         setDarkMode={setDarkMode}
       />
-      <div>
-        <CategoryNavbar
-          onSelectCategory={setSelectedCategory}
-          darkMode={darkMode}
-        />
-      </div>
+
+      <CategoryNavbar
+        onSelectCategory={setSelectedCategory}
+        darkMode={darkMode}
+      />
+
       <Routes>
         <Route
           path="/"
@@ -171,7 +180,6 @@ export default function App() {
         <Route path="/orders" element={<CustomerOrders />} />
         <Route path="/login" element={<LoginForm />} />
         <Route path="/signup" element={<SignupForm />} />
-
         <Route
           path="/wishlist"
           element={
@@ -183,7 +191,17 @@ export default function App() {
           }
         />
       </Routes>
-      <ToastContainer position="top-right" autoClose={3000} />
+
+      <ToastContainer
+        position="top-center"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        pauseOnHover
+        draggable
+        theme="dark"
+      />
     </div>
   );
 }

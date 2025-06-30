@@ -15,10 +15,10 @@ export default function Cart({
 
   return (
     <div>
-      <h1 style={styles.cart}>🛒 Your Cart</h1>
+      {/* ❌ Removed duplicated <h1> title */}
 
       {cartItems.length === 0 ? (
-        <p>Cart is empty.</p>
+        <p style={{ textAlign: "center", fontSize: "18px" }}>Cart is empty.</p>
       ) : (
         <div>
           {cartItems.map((item) => (
@@ -86,11 +86,6 @@ export default function Cart({
 }
 
 const styles = {
-  cart: {
-    textAlign: "center",
-    fontSize: "32px",
-    marginBottom: "20px",
-  },
   cartItem: {
     display: "flex",
     alignItems: "center",
