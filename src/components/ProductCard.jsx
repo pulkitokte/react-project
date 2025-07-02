@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Heart, HeartOff, HeartPlus } from "lucide-react";
+import { Heart, HeartPlus } from "lucide-react";
 import "./ProductCardStyle.css";
 
 export default function ProductCard({
@@ -8,33 +8,57 @@ export default function ProductCard({
   toggleFavorite,
   isFavorite,
 }) {
+  const imageSrc =
+    product.thumbnail || product.image || "https://via.placeholder.com/150";
+  const title = product.title || "No Title";
+  const price = product.price !== undefined ? product.price : "N/A";
+
   return (
     <div className="product-card" style={styles.card}>
-      <img className="thumbnail" src={product.thumbnail} alt={product.title} style={styles.image} />
-      <h3>{product.title}</h3>
-      <p>₹ {product.price}</p>
+      <img
+        className="thumbnail"
+        src={imageSrc}
+        alt={title}
+        style={styles.image}
+      />
+      <h3>{title}</h3>
+      <p>₹ {price}</p>
 
-      <button className="cart" onClick={() => addToCart(product)} style={styles.btn}>
-        Add to Cart
-      </button>
-
-      {toggleFavorite && (
+      {/* 🛒 Add to Cart with Tooltip */}
+      <div className="tooltip-wrapper">
         <button
-          className="button"
-          onClick={() => toggleFavorite(product)}
-          style={styles.heart}
+          className="cart"
+          onClick={() => addToCart(product)}
+          style={styles.btn}
         >
+          Add to Cart
+        </button>
+        <span className="tooltip-text">Add to Cart</span>
+      </div>
+
+      {/* ❤️ Wishlist Button with Tooltip */}
+      <div className="tooltip-wrapper">
+        <button onClick={() => toggleFavorite(product)} style={styles.heart}>
           {isFavorite ? (
             <Heart color="red" size={20} fill="red" />
           ) : (
             <HeartPlus color="#444" size={20} />
           )}
         </button>
-      )}
+        <span className="tooltip-text">
+          {isFavorite ? "Remove from Wishlist" : "Add to Wishlist"}
+        </span>
+      </div>
 
-      <Link to={`/product/${product.id}`}>
-        <button className="view" style={styles.viewBtn}>View Details</button>
-      </Link>
+      {/* 🔍 View Details Button with Tooltip */}
+      <div className="tooltip-wrapper">
+        <Link to={`/product/${product.id}`}>
+          <button className="view" style={styles.viewBtn}>
+            View Details
+          </button>
+        </Link>
+        <span className="tooltip-text">View Details</span>
+      </div>
     </div>
   );
 }

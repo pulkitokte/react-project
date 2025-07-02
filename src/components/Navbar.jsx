@@ -26,7 +26,6 @@ export default function Navbar({
 
   const handleSearch = (e) => {
     e.preventDefault();
-    console.log("Searching For...", searchTerm);
     setShowSuggestions(false);
   };
 
@@ -133,6 +132,9 @@ export default function Navbar({
             </button>
             <button onClick={() => navigate("/orders")} style={styles.link1}>
               My Orders
+            </button>
+            <button onClick={() => navigate("/profile")} style={styles.link1}>
+              My Profile
             </button>
             <button onClick={handleLogout} style={styles.link1}>
               Sign Out

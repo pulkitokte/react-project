@@ -1,15 +1,21 @@
-import { useState } from "react";
+// ✅ Imports and setup remain the same
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { auth, db } from "../firebase";
 import { useAuthState } from "react-firebase-hooks/auth";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import {
+  collection,
+  addDoc,
+  serverTimestamp,
+  doc,
+  setDoc,
+} from "firebase/firestore";
 import { parsePhoneNumberFromString } from "libphonenumber-js";
 import { jsPDF } from "jspdf";
 import emailjs from "emailjs-com";
 import BackButton from "../components/BackButton";
 
-// 🌍 Supported countries
 const supportedCountries = [
   { code: "+91", name: "India 🇮🇳" },
   { code: "+1", name: "USA 🇺🇸" },
@@ -27,33 +33,33 @@ export default function CheckoutPage({ cartItems, setCartItems }) {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [sendInvoiceByEmail, setSendInvoiceByEmail] = useState(false);
 
-  const savedAddress = JSON.parse(localStorage.getItem("userAddress")) || {
+  const storedAddresses =
+    JSON.parse(localStorage.getItem("userAddresses")) || [];
+  const [addresses, setAddresses] = useState(storedAddresses);
+  const [selectedAddressLabel, setSelectedAddressLabel] = useState("");
+  const [formData, setFormData] = useState({
     name: "",
     address: "",
     phone: "",
     countryCode: "+91",
-  };
-
-  const [formData, setFormData] = useState(savedAddress);
-  const [useSaved, setUseSaved] = useState(!!savedAddress.name);
+  });
+  const [saveAsLabel, setSaveAsLabel] = useState("");
 
   const total = cartItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
   );
 
+  useEffect(() => {
+    if (selectedAddressLabel) {
+      const addr = addresses.find((a) => a.label === selectedAddressLabel);
+      if (addr) setFormData(addr.data);
+    }
+  }, [selectedAddressLabel]);
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleUseSavedToggle = () => {
-    if (!useSaved) {
-      setFormData(savedAddress);
-    } else {
-      setFormData({ name: "", address: "", phone: "", countryCode: "+91" });
-    }
-    setUseSaved(!useSaved);
   };
 
   const generateInvoiceBase64 = (order) => {
@@ -86,10 +92,10 @@ export default function CheckoutPage({ cartItems, setCartItems }) {
 
     try {
       await emailjs.send(
-        "service_9z1dno8", // Replace
-        "template_w7xef0x", // Replace
+        "service_9z1dno8",
+        "template_w7xef0x",
         templateParams,
-        "AmaClone" // Replace
+        "AmaClone"
       );
       toast.success("📧 Invoice emailed!");
     } catch (err) {
@@ -103,7 +109,7 @@ export default function CheckoutPage({ cartItems, setCartItems }) {
     setLoading(true);
 
     if (!agreedToTerms) {
-      toast.error("✅ Please agree to the terms before placing the order.");
+      toast.error("✅ Please agree to the terms.");
       setLoading(false);
       return;
     }
@@ -115,13 +121,14 @@ export default function CheckoutPage({ cartItems, setCartItems }) {
     const phoneNumber = parsePhoneNumberFromString(fullPhone);
 
     if (!phoneNumber || !phoneNumber.isValid()) {
-      toast.error("📵 Invalid phone number for selected country.");
+      toast.error("📵 Invalid phone number.");
       setLoading(false);
       return;
     }
 
     const formattedPhone = phoneNumber.formatInternational();
-
+    const timestamp = Date.now();
+    const orderId = `order_${cartItems.length}_${timestamp}`;
     const currentOrder = {
       name: formData.name.trim(),
       address: formData.address.trim(),
@@ -132,10 +139,11 @@ export default function CheckoutPage({ cartItems, setCartItems }) {
         image: item.image || item.thumbnail,
       })),
       totalPrice: total,
-      timestamp: Date.now(),
+      timestamp,
       createdAt: new Date().toISOString(),
       userId: user?.uid || null,
       userEmail: user?.email || "Guest",
+      orderId,
     };
 
     try {
@@ -144,6 +152,29 @@ export default function CheckoutPage({ cartItems, setCartItems }) {
         createdAt: serverTimestamp(),
       });
 
+      const trackingRef = doc(db, "tracking", orderId);
+      await setDoc(trackingRef, {
+        status: {
+          ordered: true,
+          shipped: false,
+          outForDelivery: false,
+          delivered: false,
+        },
+        updatedAt: new Date().toLocaleString(),
+      });
+
+      // 💾 Save address if labeled
+      if (saveAsLabel) {
+        const updatedAddresses = [
+          ...addresses.filter((a) => a.label !== saveAsLabel),
+          { label: saveAsLabel, data: formData },
+        ];
+        setAddresses(updatedAddresses);
+        localStorage.setItem("userAddresses", JSON.stringify(updatedAddresses));
+        toast.success("📍 Address saved!");
+      }
+
+      // 🛒 Clear cart
       localStorage.setItem(
         "orders",
         JSON.stringify([
@@ -151,7 +182,6 @@ export default function CheckoutPage({ cartItems, setCartItems }) {
           currentOrder,
         ])
       );
-      localStorage.setItem("userAddress", JSON.stringify(currentOrder));
       setCartItems([]);
       localStorage.removeItem("cart");
 
@@ -192,22 +222,25 @@ export default function CheckoutPage({ cartItems, setCartItems }) {
 
           <h3>Total: ₹{total.toFixed(2)}</h3>
 
-          {savedAddress.name && (
-            <button
-              onClick={handleUseSavedToggle}
-              style={{
-                ...styles.button,
-                backgroundColor: useSaved ? "#bbb" : "#FFA41C",
-                marginBottom: "10px",
-              }}
-            >
-              {useSaved ? "✏️ Use New Address" : "📦 Use Saved Address"}
-            </button>
+          {addresses.length > 0 && (
+            <>
+              <label>Select Saved Address: </label>
+              <select
+                value={selectedAddressLabel}
+                onChange={(e) => setSelectedAddressLabel(e.target.value)}
+                style={{ ...styles.input, marginBottom: "10px" }}
+              >
+                <option value="">-- Select Address --</option>
+                {addresses.map((addr) => (
+                  <option key={addr.label} value={addr.label}>
+                    {addr.label}
+                  </option>
+                ))}
+              </select>
+            </>
           )}
 
           <form onSubmit={handleSubmit}>
-            <h4>Shipping Details</h4>
-
             <input
               type="text"
               name="name"
@@ -216,7 +249,6 @@ export default function CheckoutPage({ cartItems, setCartItems }) {
               onChange={handleInputChange}
               required
               style={styles.input}
-              disabled={useSaved}
             />
             <input
               type="text"
@@ -226,9 +258,7 @@ export default function CheckoutPage({ cartItems, setCartItems }) {
               onChange={handleInputChange}
               required
               style={styles.input}
-              disabled={useSaved}
             />
-
             <div style={styles.phoneBlock}>
               <select
                 value={formData.countryCode}
@@ -239,7 +269,6 @@ export default function CheckoutPage({ cartItems, setCartItems }) {
                   }))
                 }
                 style={styles.countrySelect}
-                disabled={useSaved}
               >
                 {supportedCountries.map((c) => (
                   <option key={c.code} value={c.code}>
@@ -255,9 +284,16 @@ export default function CheckoutPage({ cartItems, setCartItems }) {
                 onChange={handleInputChange}
                 required
                 style={styles.phoneInput}
-                disabled={useSaved}
               />
             </div>
+
+            <input
+              type="text"
+              placeholder="Label this address (e.g. Home, Office)"
+              value={saveAsLabel}
+              onChange={(e) => setSaveAsLabel(e.target.value)}
+              style={styles.input}
+            />
 
             <label style={{ fontSize: "14px" }}>
               <input
@@ -291,13 +327,6 @@ export default function CheckoutPage({ cartItems, setCartItems }) {
             >
               {loading ? "Placing Order..." : "✅ Place Order"}
             </button>
-
-            {loading && (
-              <div style={{ textAlign: "center", marginTop: "10px" }}>
-                <div className="loader"></div>
-                <p>Processing your order...</p>
-              </div>
-            )}
           </form>
         </>
       )}

@@ -3,21 +3,59 @@ import { toast } from "react-toastify";
 import { ScrollText } from "lucide-react";
 import Loading from "../components/Loading";
 import BackButton from "../components/BackButton";
+import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
+
+const db = getFirestore();
 
 export default function CustomerOrders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [trackingStatuses, setTrackingStatuses] = useState({});
 
   useEffect(() => {
     const timer = setTimeout(() => {
       const saved = localStorage.getItem("orders");
       if (saved) {
-        setOrders(JSON.parse(saved));
+        const parsedOrders = JSON.parse(saved);
+        setOrders(parsedOrders);
+        fetchTrackingStatuses(parsedOrders);
       }
       setLoading(false);
     }, 500);
     return () => clearTimeout(timer);
   }, []);
+
+  const fetchTrackingStatuses = async (orders) => {
+    const allStatuses = {};
+    for (const order of orders) {
+      const orderId = order?.orderId || `order_fallback_${order.timestamp}`;
+      const docRef = doc(db, "tracking", orderId);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        allStatuses[orderId] = docSnap.data();
+      } else {
+        await setDoc(docRef, {
+          status: {
+            ordered: true,
+            shipped: false,
+            outForDelivery: false,
+            delivered: false,
+          },
+          updatedAt: new Date().toLocaleString(),
+        });
+        allStatuses[orderId] = {
+          status: {
+            ordered: true,
+            shipped: false,
+            outForDelivery: false,
+            delivered: false,
+          },
+        };
+      }
+    }
+    setTrackingStatuses(allStatuses);
+  };
 
   const handleCancel = (index) => {
     if (!window.confirm("Are you sure you want to cancel this order?")) return;
@@ -29,6 +67,30 @@ export default function CustomerOrders() {
     toast.info("❌ Order cancelled successfully.");
   };
 
+  const handleReturnRequest = async (orderId) => {
+    const reason = prompt("Please enter the reason for return:");
+    if (!reason) return toast.warn("Return reason required!");
+
+    try {
+      const docRef = doc(db, "tracking", orderId);
+      await setDoc(
+        docRef,
+        {
+          returnRequest: {
+            reason,
+            status: "Pending",
+            requestedAt: new Date().toISOString(),
+          },
+        },
+        { merge: true }
+      );
+      toast.success("Return request submitted!");
+    } catch (err) {
+      console.error("Return request failed", err);
+      toast.error("Failed to submit return request.");
+    }
+  };
+
   if (loading) return <Loading />;
 
   return (
@@ -36,13 +98,25 @@ export default function CustomerOrders() {
       style={{
         padding: "20px",
         minHeight: "100vh",
+        backgroundColor: "#121212",
+        color: "#fff",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
       }}
     >
-      <BackButton />
-      <h2 style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+      <div style={{ width: "100%", marginTop: "40px" }}>
+        <BackButton />
+      </div>
+
+      <h2
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "10px",
+          marginBottom: "30px",
+        }}
+      >
         <ScrollText size={28} /> My Orders
       </h2>
 
@@ -55,15 +129,20 @@ export default function CustomerOrders() {
             0
           );
 
+          const orderId = order?.orderId || `order_fallback_${order.timestamp}`;
+          const tracking = trackingStatuses[orderId] || {};
+          const statusMap = tracking.status || {};
+          const isDelivered = statusMap.delivered === true;
+
           return (
             <div
               key={index}
               style={{
-                border: "1px solid #ccc",
+                border: "1px solid #333",
                 borderRadius: "8px",
                 padding: "20px",
                 marginBottom: "25px",
-                backgroundColor: "#f9f9f9",
+                backgroundColor: "#1e1e1e",
                 maxWidth: "600px",
                 width: "100%",
               }}
@@ -82,11 +161,48 @@ export default function CustomerOrders() {
               <p>
                 <strong>Phone:</strong> {order.phone}
               </p>
-              <h4>🛒 Products:</h4>
+
+              <p>
+                <strong>Status:</strong>
+              </p>
+              <ul style={{ paddingLeft: "20px" }}>
+                <li
+                  style={{ color: statusMap.ordered ? "lightgreen" : "#888" }}
+                >
+                  ✅ Ordered
+                </li>
+                <li
+                  style={{ color: statusMap.shipped ? "lightgreen" : "#888" }}
+                >
+                  🚚 Shipped
+                </li>
+                <li
+                  style={{
+                    color: statusMap.outForDelivery ? "lightgreen" : "#888",
+                  }}
+                >
+                  📦 Out for Delivery
+                </li>
+                <li
+                  style={{
+                    color: statusMap.delivered ? "lightgreen" : "#888",
+                  }}
+                >
+                  📬 Delivered
+                </li>
+              </ul>
+
+              <h4 style={{ marginTop: "15px" }}>🛒 Products:</h4>
               {order.cart.map((item, i) => (
                 <div
                   key={i}
-                  style={{ display: "flex", gap: "10px", marginBottom: "10px" }}
+                  style={{
+                    display: "flex",
+                    gap: "10px",
+                    marginBottom: "10px",
+                    borderBottom: "1px solid #333",
+                    paddingBottom: "10px",
+                  }}
                 >
                   <img
                     src={item.image}
@@ -95,8 +211,10 @@ export default function CustomerOrders() {
                       width: "60px",
                       height: "60px",
                       objectFit: "contain",
-                      border: "1px solid #ccc",
+                      border: "1px solid #555",
                       padding: "5px",
+                      backgroundColor: "#fff",
+                      borderRadius: "4px",
                     }}
                   />
                   <div>
@@ -107,21 +225,75 @@ export default function CustomerOrders() {
                   </div>
                 </div>
               ))}
-              <h4>Total: ₹{total.toFixed(2)}</h4>
-              <button
-                onClick={() => handleCancel(index)}
-                style={{
-                  backgroundColor: "#ff4d4f",
-                  color: "#fff",
-                  border: "none",
-                  padding: "10px 15px",
-                  borderRadius: "5px",
-                  cursor: "pointer",
-                  marginTop: "10px",
-                }}
-              >
-                Cancel Order
-              </button>
+
+              <h4 style={{ marginTop: "15px" }}>Total: ₹{total.toFixed(2)}</h4>
+
+              <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
+                <button
+                  onClick={() => handleCancel(index)}
+                  style={{
+                    backgroundColor: "#ff4d4f",
+                    color: "#fff",
+                    border: "none",
+                    padding: "10px 15px",
+                    borderRadius: "5px",
+                    cursor: "pointer",
+                  }}
+                >
+                  Cancel Order
+                </button>
+
+                {isDelivered && (
+                  <div style={{ width: "100%" }}>
+                    <textarea
+                      rows={3}
+                      placeholder="Reason for return..."
+                      style={{
+                        width: "100%",
+                        padding: "10px",
+                        marginTop: "10px",
+                        borderRadius: "5px",
+                        border: "1px solid #ccc",
+                        fontSize: "14px",
+                        resize: "vertical",
+                        backgroundColor: "#f9f9f9",
+                        color: "#000",
+                      }}
+                      value={tracking.returnReason || ""}
+                      onChange={(e) => {
+                        const updated = { ...trackingStatuses };
+                        updated[orderId] = {
+                          ...updated[orderId],
+                          returnReason: e.target.value,
+                        };
+                        setTrackingStatuses(updated);
+                      }}
+                    ></textarea>
+
+                    <button
+                      onClick={() => {
+                        const reason = trackingStatuses[orderId]?.returnReason;
+                        if (!reason || reason.trim().length === 0) {
+                          toast.warning("⚠️ Please enter a reason for return.");
+                          return;
+                        }
+                        handleReturnRequest(orderId, reason.trim());
+                      }}
+                      style={{
+                        backgroundColor: "#FFA41C",
+                        color: "#000",
+                        border: "none",
+                        padding: "10px 15px",
+                        borderRadius: "5px",
+                        cursor: "pointer",
+                        marginTop: "5px",
+                      }}
+                    >
+                      Submit Return Request
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           );
         })

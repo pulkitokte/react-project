@@ -3,6 +3,7 @@ import axios from "axios";
 import ProductCard from "../components/ProductCard";
 import CarouselBanner from "../components/CarouselBanner";
 import Loading from "../components/Loading";
+import RecentViews from "../components/RecentViews";
 
 export default function Home({
   addToCart,
@@ -141,6 +142,12 @@ export default function Home({
 
       <CarouselBanner />
 
+      <RecentViews
+        addToCart={addToCart}
+        toggleFavorite={toggleFavorite}
+        wishlist={wishlist}
+      />
+
       <div
         style={{
           display: "flex",
@@ -276,7 +283,7 @@ export default function Home({
 
       {/* Pagination Controls */}
       <div style={{ marginTop: "30px", textAlign: "center" }}>
-        <button 
+        <button
           onClick={() => {
             setCurrentPage((prev) => Math.max(prev - 1, 1));
             window.scrollTo({ top: 0, behavior: "smooth" });
@@ -308,7 +315,7 @@ export default function Home({
               borderRadius: "4px",
               cursor: "pointer",
               border: "none",
-              outline: "none",  
+              outline: "none",
             }}
           >
             {i + 1}

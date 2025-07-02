@@ -17,6 +17,9 @@ import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "./firebase";
 import LoginForm from "./pages/LoginForm";
 import SignupForm from "./pages/SignupForm";
+import ProfilePage from "./pages/ProfilePage"; // ✅ Profile page route
+<Route path="/address" element={<AddressPage />} />;
+
 
 export default function App() {
   const [cart, setCart] = useState(() => {
@@ -45,11 +48,15 @@ export default function App() {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [darkMode, setDarkMode] = useState(false);
   const [user, setUser] = useState(null);
-  const [allProducts, setAllProducts] = useState([]); // ✅ new state
+  const [allProducts, setAllProducts] = useState([]);
 
   useEffect(() => {
     localStorage.setItem("cart", JSON.stringify(cart));
   }, [cart]);
+
+  useEffect(() => {
+    localStorage.setItem("wishlist", JSON.stringify(wishlist));
+  }, [wishlist]);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (firebaseUser) => {
@@ -58,9 +65,8 @@ export default function App() {
     return () => unsub();
   }, []);
 
-  // ✅ Fetch products on mount
   useEffect(() => {
-    fetch("https://fakestoreapi.com/products") // or your own API
+    fetch("https://fakestoreapi.com/products")
       .then((res) => res.json())
       .then((data) => setAllProducts(data))
       .catch((err) => console.error("Error fetching products:", err));
@@ -69,9 +75,13 @@ export default function App() {
   const toggleFavorite = (product) => {
     const exists = wishlist.find((item) => item.id === product.id);
     if (exists) {
-      setWishlist(wishlist.filter((item) => item.id !== product.id));
+      const updated = wishlist.filter((item) => item.id !== product.id);
+      setWishlist(updated);
+      toast.info("💔 Removed from wishlist");
     } else {
-      setWishlist([...wishlist, product]);
+      const updated = [...wishlist, product];
+      setWishlist(updated);
+      toast.success("💖 Added to wishlist");
     }
   };
 
@@ -90,8 +100,10 @@ export default function App() {
             : item
         )
       );
+      toast.success("➕ Quantity increased in cart");
     } else {
       setCart([...cart, { ...updatedProduct, quantity: 1 }]);
+      toast.success("🛒 Added to cart");
     }
   };
 
@@ -126,7 +138,7 @@ export default function App() {
       }}
     >
       <Navbar
-        products={allProducts} // ✅ passed correctly now
+        products={allProducts}
         user={user}
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
@@ -156,7 +168,13 @@ export default function App() {
         />
         <Route
           path="/product/:id"
-          element={<ProductPage addToCart={addToCart} />}
+          element={
+            <ProductPage
+              addToCart={addToCart}
+              toggleWishlist={toggleFavorite}
+              wishlist={wishlist}
+            />
+          }
         />
         <Route
           path="/cart"
@@ -166,7 +184,11 @@ export default function App() {
               onRemove={removeFromCart}
               onIncrease={increaseQuantity}
               onDecrease={decreaseQuantity}
+              onAddToCart={addToCart}
+              toggleWishlist={toggleFavorite}
+              wishlist={wishlist}
               darkMode={darkMode}
+              allProducts={allProducts}
             />
           }
         />
@@ -180,6 +202,7 @@ export default function App() {
         <Route path="/orders" element={<CustomerOrders />} />
         <Route path="/login" element={<LoginForm />} />
         <Route path="/signup" element={<SignupForm />} />
+
         <Route
           path="/wishlist"
           element={
@@ -187,9 +210,13 @@ export default function App() {
               wishlist={wishlist}
               addToCart={addToCart}
               toggleFavorite={toggleFavorite}
+              darkMode={darkMode}
             />
           }
         />
+
+        {/* ✅✅✅ Profile route added here */}
+        <Route path="/profile" element={<ProfilePage />} />
       </Routes>
 
       <ToastContainer
