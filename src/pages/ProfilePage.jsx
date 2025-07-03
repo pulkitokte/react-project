@@ -16,6 +16,7 @@ const db = getFirestore();
 
 export default function ProfilePage() {
   const [user, setUser] = useState(null);
+  const [userData, setUserData] = useState(null);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -26,7 +27,11 @@ export default function ProfilePage() {
         navigate("/login");
       } else {
         setUser(currentUser);
-        console.log("✅ User loaded:", currentUser);
+        const userDocRef = doc(db, "users", currentUser.uid);
+        const userSnap = await getDoc(userDocRef);
+        if (userSnap.exists()) {
+          setUserData(userSnap.data());
+        }
         await fetchOrders(currentUser);
       }
     });
@@ -37,13 +42,7 @@ export default function ProfilePage() {
   const fetchTrackingStatus = async (orderId) => {
     const docRef = doc(db, "tracking", orderId);
     const snap = await getDoc(docRef);
-    if (snap.exists()) {
-      console.log(`📦 Tracking for ${orderId}:`, snap.data());
-      return snap.data()?.status || {};
-    } else {
-      console.warn(`⚠️ No tracking found for ${orderId}`);
-      return {};
-    }
+    return snap.exists() ? snap.data()?.status || {} : {};
   };
 
   const fetchOrders = async (currentUser) => {
@@ -82,6 +81,9 @@ export default function ProfilePage() {
 
   if (!user) return <p>Loading profile...</p>;
 
+  const { displayName = "Anonymous", email, photoURL } = user;
+  const { phone, countryCode, gender, dob, age } = userData || {};
+
   return (
     <div style={styles.container}>
       <h2>
@@ -90,16 +92,31 @@ export default function ProfilePage() {
 
       <div style={styles.section}>
         <img
-          src={user.photoURL || "https://via.placeholder.com/80"}
+          src={photoURL || "https://placehold.co/80x80"}
           alt="Profile"
           style={styles.avatar}
         />
         <div>
           <p>
-            <strong>Name:</strong> {user.displayName || "Anonymous"}
+            <strong>Name:</strong> {displayName}
           </p>
           <p>
-            <strong>Email:</strong> {user.email}
+            <strong>Email:</strong> {email}
+          </p>
+          <p>
+            <strong>Mobile:</strong> {countryCode || ""}{" "}
+            {phone || "Not provided"}
+          </p>
+
+          <p>
+            <strong>Age:</strong> {age || "Not available"}
+          </p>
+
+          <p>
+            <strong>Gender:</strong> {gender || "Not provided"}
+          </p>
+          <p>
+            <strong>DOB:</strong> {dob || "Not provided"}
           </p>
         </div>
       </div>
@@ -139,7 +156,6 @@ export default function ProfilePage() {
               <p>
                 <strong>Status:</strong> {getOrderStatus(order.trackingStatus)}
               </p>
-
               <p>
                 <strong>📦 Products:</strong>
               </p>
@@ -160,7 +176,6 @@ export default function ProfilePage() {
                   </li>
                 ))}
               </ul>
-
               <p>
                 <strong>Total:</strong> ₹{order.totalPrice || order.total}
               </p>
@@ -206,6 +221,7 @@ const styles = {
     width: "80px",
     height: "80px",
     borderRadius: "50%",
+    objectFit: "cover",
   },
   orderList: {
     listStyle: "none",

@@ -10,6 +10,7 @@ import {
   serverTimestamp,
   doc,
   setDoc,
+  getDoc,
 } from "firebase/firestore";
 import { parsePhoneNumberFromString } from "libphonenumber-js";
 import { jsPDF } from "jspdf";
@@ -32,10 +33,7 @@ export default function CheckoutPage({ cartItems, setCartItems }) {
   const [loading, setLoading] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [sendInvoiceByEmail, setSendInvoiceByEmail] = useState(false);
-
-  const storedAddresses =
-    JSON.parse(localStorage.getItem("userAddresses")) || [];
-  const [addresses, setAddresses] = useState(storedAddresses);
+  const [addresses, setAddresses] = useState([]);
   const [selectedAddressLabel, setSelectedAddressLabel] = useState("");
   const [formData, setFormData] = useState({
     name: "",
@@ -49,6 +47,19 @@ export default function CheckoutPage({ cartItems, setCartItems }) {
     (sum, item) => sum + item.price * item.quantity,
     0
   );
+
+  useEffect(() => {
+    if (user?.uid) {
+      const fetchAddresses = async () => {
+        const docRef = doc(db, "addresses", user.uid);
+        const snap = await getDoc(docRef);
+        if (snap.exists()) {
+          setAddresses(snap.data().addresses || []);
+        }
+      };
+      fetchAddresses();
+    }
+  }, [user]);
 
   useEffect(() => {
     if (selectedAddressLabel) {
@@ -164,24 +175,19 @@ export default function CheckoutPage({ cartItems, setCartItems }) {
       });
 
       // 💾 Save address if labeled
-      if (saveAsLabel) {
+      if (saveAsLabel && user?.uid) {
         const updatedAddresses = [
           ...addresses.filter((a) => a.label !== saveAsLabel),
           { label: saveAsLabel, data: formData },
         ];
+        await setDoc(doc(db, "addresses", user.uid), {
+          addresses: updatedAddresses,
+        });
         setAddresses(updatedAddresses);
-        localStorage.setItem("userAddresses", JSON.stringify(updatedAddresses));
         toast.success("📍 Address saved!");
       }
 
       // 🛒 Clear cart
-      localStorage.setItem(
-        "orders",
-        JSON.stringify([
-          ...(JSON.parse(localStorage.getItem("orders")) || []),
-          currentOrder,
-        ])
-      );
       setCartItems([]);
       localStorage.removeItem("cart");
 
@@ -302,7 +308,7 @@ export default function CheckoutPage({ cartItems, setCartItems }) {
                 onChange={(e) => setAgreedToTerms(e.target.checked)}
                 style={{ marginRight: "8px" }}
               />
-              I agree to the{" "}
+              I agree to the {" "}
               <a href="/terms" target="_blank" rel="noreferrer">
                 Terms and Conditions
               </a>

@@ -1,4 +1,23 @@
-import { useState } from "react";
+import { initializeApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDMS3i_TKSC2DJNxpE7fhh4WvpmRfS5FEU",
+  authDomain: "clone-83da5.firebaseapp.com",
+  projectId: "clone-83da5",
+  storageBucket: "clone-83da5.appspot.com",
+  messagingSenderId: "85094369407",
+  appId: "1:85094369407:web:091bf1195d04a7075a174a",
+  measurementId: "G-2YY6LSWER2",
+};
+
+const app = initializeApp(firebaseConfig);
+export const auth = getAuth(app);
+export const db = getFirestore(app);
+ ////////////////////////
+
+ import { useState } from "react";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { auth, db } from "../firebase";
 import { doc, setDoc } from "firebase/firestore";
@@ -48,18 +67,6 @@ export default function SignupForm() {
     );
   };
 
-  const calculateAge = (dobStr) => {
-    const [day, month, year] = dobStr.split("/").map(Number);
-    const birthDate = new Date(year, month - 1, day);
-    const today = new Date();
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const m = today.getMonth() - birthDate.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-    return age;
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -92,9 +99,6 @@ export default function SignupForm() {
 
       await updateProfile(userCredential.user, { displayName: name });
 
-      const age = calculateAge(dob);
-
-
       await setDoc(doc(db, "users", userCredential.user.uid), {
         uid: userCredential.user.uid,
         displayName: name,
@@ -102,7 +106,6 @@ export default function SignupForm() {
         phone,
         countryCode,
         gender,
-        age,
         dob, // already in dd/mm/yyyy format
       });
 
@@ -141,14 +144,7 @@ export default function SignupForm() {
       />
 
       {/* Mobile Number */}
-      <div
-        style={{
-          display: "flex",
-          gap: "10px",
-          alignItems: "center",
-          margin: "10px",
-        }}
-      >
+      <div style={{ display: "flex", gap: "10px", alignItems: "center", margin: "10px" }}>
         <select
           value={countryCode}
           onChange={(e) => setCountryCode(e.target.value)}
@@ -232,12 +228,7 @@ export default function SignupForm() {
       )}
 
       {password && (
-        <div
-          style={{
-            ...styles.strength,
-            color: strengthColors[passwordStrength],
-          }}
-        >
+        <div style={{ ...styles.strength, color: strengthColors[passwordStrength] }}>
           Password Strength: {passwordStrength}
         </div>
       )}

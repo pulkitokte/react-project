@@ -1,6 +1,17 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import BackButton from "../components/BackButton";
+import { auth, db } from "../firebase";
+import {
+  collection,
+  getDocs,
+  doc,
+  deleteDoc,
+  updateDoc,
+  setDoc,
+} from "firebase/firestore";
+
+import { onAuthStateChanged } from "firebase/auth";
 
 export default function AddressPage() {
   const [addresses, setAddresses] = useState([]);
@@ -12,50 +23,71 @@ export default function AddressPage() {
     label: "Home",
   });
   const [isEditing, setIsEditing] = useState(null);
+  const [user, setUser] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem("addresses")) || [];
-    setAddresses(stored);
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      if (!currentUser) {
+        navigate("/login");
+      } else {
+        setUser(currentUser);
+        await fetchAddresses(currentUser.uid);
+      }
+    });
+    return () => unsubscribe();
   }, []);
+
+  const fetchAddresses = async (uid) => {
+    const snapshot = await getDocs(collection(db, "users", uid, "addresses"));
+    const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    setAddresses(data);
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!user) return;
 
-    const updatedAddresses = [...addresses];
-
-    if (isEditing !== null) {
-      updatedAddresses[isEditing] = formData;
-    } else {
-      updatedAddresses.push(formData);
+    try {
+      if (isEditing) {
+        const docRef = doc(db, "users", user.uid, "addresses", isEditing);
+        await updateDoc(docRef, formData);
+      } else {
+        const newDoc = doc(db, "users", user.uid, "addresses", formData.label);
+        await setDoc(newDoc, formData);
+      }
+      await fetchAddresses(user.uid);
+      setFormData({
+        name: "",
+        address: "",
+        phone: "",
+        countryCode: "+91",
+        label: "Home",
+      });
+      setIsEditing(null);
+    } catch (error) {
+      console.error("Error saving address:", error);
     }
-
-    localStorage.setItem("addresses", JSON.stringify(updatedAddresses));
-    setAddresses(updatedAddresses);
-    setFormData({
-      name: "",
-      address: "",
-      phone: "",
-      countryCode: "+91",
-      label: "Home",
-    });
-    setIsEditing(null);
   };
 
-  const handleEdit = (index) => {
-    setFormData(addresses[index]);
-    setIsEditing(index);
+  const handleEdit = (addr) => {
+    setFormData(addr);
+    setIsEditing(addr.label);
   };
 
-  const handleDelete = (index) => {
-    const updated = addresses.filter((_, i) => i !== index);
-    localStorage.setItem("addresses", JSON.stringify(updated));
-    setAddresses(updated);
+  const handleDelete = async (label) => {
+    if (!user) return;
+    try {
+      await deleteDoc(doc(db, "users", user.uid, "addresses", label));
+      await fetchAddresses(user.uid);
+    } catch (error) {
+      console.error("Error deleting address:", error);
+    }
   };
 
   return (
@@ -67,9 +99,9 @@ export default function AddressPage() {
         <p>No saved addresses yet.</p>
       ) : (
         <ul style={{ listStyle: "none", padding: 0 }}>
-          {addresses.map((addr, i) => (
+          {addresses.map((addr) => (
             <li
-              key={i}
+              key={addr.label}
               style={{
                 border: "1px solid #ccc",
                 padding: "10px",
@@ -85,10 +117,13 @@ export default function AddressPage() {
               <p>
                 {addr.countryCode} {addr.phone}
               </p>
-              <button onClick={() => handleEdit(i)} style={styles.editBtn}>
+              <button onClick={() => handleEdit(addr)} style={styles.editBtn}>
                 ✏️ Edit
               </button>
-              <button onClick={() => handleDelete(i)} style={styles.deleteBtn}>
+              <button
+                onClick={() => handleDelete(addr.label)}
+                style={styles.deleteBtn}
+              >
                 🗑️ Delete
               </button>
             </li>

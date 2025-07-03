@@ -3,9 +3,17 @@ import { toast } from "react-toastify";
 import { ScrollText } from "lucide-react";
 import Loading from "../components/Loading";
 import BackButton from "../components/BackButton";
-import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
-
-const db = getFirestore();
+import { auth, db } from "../firebase";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  doc,
+  getDoc,
+  setDoc,
+} from "firebase/firestore";
+import { onAuthStateChanged } from "firebase/auth";
 
 export default function CustomerOrders() {
   const [orders, setOrders] = useState([]);
@@ -13,64 +21,65 @@ export default function CustomerOrders() {
   const [trackingStatuses, setTrackingStatuses] = useState({});
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      const saved = localStorage.getItem("orders");
-      if (saved) {
-        const parsedOrders = JSON.parse(saved);
-        setOrders(parsedOrders);
-        fetchTrackingStatuses(parsedOrders);
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user) return;
+      const q = query(collection(db, "orders"), where("userId", "==", user.uid));
+      const querySnapshot = await getDocs(q);
+      const fetchedOrders = [];
+
+      for (const docSnap of querySnapshot.docs) {
+        const orderData = docSnap.data();
+        const orderId = orderData?.orderId || `order_fallback_${orderData.timestamp}`;
+        const trackingDoc = await getDoc(doc(db, "tracking", orderId));
+
+        fetchedOrders.push(orderData);
+
+        if (trackingDoc.exists()) {
+          setTrackingStatuses((prev) => ({
+            ...prev,
+            [orderId]: trackingDoc.data(),
+          }));
+        } else {
+          await setDoc(doc(db, "tracking", orderId), {
+            status: {
+              ordered: true,
+              shipped: false,
+              outForDelivery: false,
+              delivered: false,
+            },
+            updatedAt: new Date().toLocaleString(),
+          });
+
+          setTrackingStatuses((prev) => ({
+            ...prev,
+            [orderId]: {
+              status: {
+                ordered: true,
+                shipped: false,
+                outForDelivery: false,
+                delivered: false,
+              },
+            },
+          }));
+        }
       }
+
+      setOrders(fetchedOrders);
       setLoading(false);
-    }, 500);
-    return () => clearTimeout(timer);
+    });
+
+    return () => unsubscribe();
   }, []);
-
-  const fetchTrackingStatuses = async (orders) => {
-    const allStatuses = {};
-    for (const order of orders) {
-      const orderId = order?.orderId || `order_fallback_${order.timestamp}`;
-      const docRef = doc(db, "tracking", orderId);
-      const docSnap = await getDoc(docRef);
-
-      if (docSnap.exists()) {
-        allStatuses[orderId] = docSnap.data();
-      } else {
-        await setDoc(docRef, {
-          status: {
-            ordered: true,
-            shipped: false,
-            outForDelivery: false,
-            delivered: false,
-          },
-          updatedAt: new Date().toLocaleString(),
-        });
-        allStatuses[orderId] = {
-          status: {
-            ordered: true,
-            shipped: false,
-            outForDelivery: false,
-            delivered: false,
-          },
-        };
-      }
-    }
-    setTrackingStatuses(allStatuses);
-  };
 
   const handleCancel = (index) => {
     if (!window.confirm("Are you sure you want to cancel this order?")) return;
-
     const updated = [...orders];
     updated.splice(index, 1);
     setOrders(updated);
-    localStorage.setItem("orders", JSON.stringify(updated));
     toast.info("❌ Order cancelled successfully.");
   };
 
-  const handleReturnRequest = async (orderId) => {
-    const reason = prompt("Please enter the reason for return:");
-    if (!reason) return toast.warn("Return reason required!");
-
+  const handleReturnRequest = async (orderId, reason) => {
     try {
       const docRef = doc(db, "tracking", orderId);
       await setDoc(
@@ -166,30 +175,10 @@ export default function CustomerOrders() {
                 <strong>Status:</strong>
               </p>
               <ul style={{ paddingLeft: "20px" }}>
-                <li
-                  style={{ color: statusMap.ordered ? "lightgreen" : "#888" }}
-                >
-                  ✅ Ordered
-                </li>
-                <li
-                  style={{ color: statusMap.shipped ? "lightgreen" : "#888" }}
-                >
-                  🚚 Shipped
-                </li>
-                <li
-                  style={{
-                    color: statusMap.outForDelivery ? "lightgreen" : "#888",
-                  }}
-                >
-                  📦 Out for Delivery
-                </li>
-                <li
-                  style={{
-                    color: statusMap.delivered ? "lightgreen" : "#888",
-                  }}
-                >
-                  📬 Delivered
-                </li>
+                <li style={{ color: statusMap.ordered ? "lightgreen" : "#888" }}>✅ Ordered</li>
+                <li style={{ color: statusMap.shipped ? "lightgreen" : "#888" }}>🚚 Shipped</li>
+                <li style={{ color: statusMap.outForDelivery ? "lightgreen" : "#888" }}>📦 Out for Delivery</li>
+                <li style={{ color: statusMap.delivered ? "lightgreen" : "#888" }}>📬 Delivered</li>
               </ul>
 
               <h4 style={{ marginTop: "15px" }}>🛒 Products:</h4>
@@ -219,9 +208,7 @@ export default function CustomerOrders() {
                   />
                   <div>
                     <p style={{ margin: 0 }}>{item.title}</p>
-                    <p style={{ margin: 0 }}>
-                      ₹ {item.price} × {item.quantity}
-                    </p>
+                    <p style={{ margin: 0 }}>₹ {item.price} × {item.quantity}</p>
                   </div>
                 </div>
               ))}

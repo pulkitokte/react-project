@@ -19,6 +19,8 @@ import LoginForm from "./pages/LoginForm";
 import SignupForm from "./pages/SignupForm";
 import ProfilePage from "./pages/ProfilePage"; // ✅ Profile page route
 <Route path="/address" element={<AddressPage />} />;
+import AddressPage from "./pages/AddressPage";
+
 
 
 export default function App() {
@@ -202,6 +204,7 @@ export default function App() {
         <Route path="/orders" element={<CustomerOrders />} />
         <Route path="/login" element={<LoginForm />} />
         <Route path="/signup" element={<SignupForm />} />
+        <Route path="/address" element={<AddressPage />} />
 
         <Route
           path="/wishlist"
