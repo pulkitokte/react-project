@@ -22,7 +22,7 @@ export default function Home({
   const [sortOption, setSortOption] = useState("");
   const [showAllBrands, setShowAllBrands] = useState(false);
 
-  const PRODUCTS_PER_PAGE = 9;
+  const PRODUCTS_PER_PAGE = 8;
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
@@ -44,7 +44,6 @@ export default function Home({
     }
   }, []);
 
-  // Reset pagination to first page when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [
@@ -117,26 +116,13 @@ export default function Home({
 
   return (
     <div
-      style={{
-        backgroundColor: darkMode ? "#121212" : "#fff",
-        color: darkMode ? "#fff" : "#000",
-        minHeight: "100vh",
-      }}
+      className={`${
+        darkMode ? "bg-[#121212] text-white" : "bg-white text-black"
+      } min-h-screen`}
     >
       {username && (
-        <div
-          style={{
-            backgroundColor: "#d4edda",
-            color: "#155724",
-            padding: "10px 20px",
-            margin: "20px",
-            borderRadius: "8px",
-            fontWeight: "bold",
-            textAlign: "center",
-          }}
-        >
-          🎉 Congratulations! You've been logged in, Welcome{" "}
-          <strong>{username}</strong>
+        <div className="bg-green-100 text-green-800 py-2 px-4 mx-4 mt-4 rounded text-center font-semibold">
+          🎉 Welcome back, <strong>{username}</strong>!
         </div>
       )}
 
@@ -148,29 +134,17 @@ export default function Home({
         wishlist={wishlist}
       />
 
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "40px",
-          padding: "20px",
-          justifyContent: "center",
-        }}
-      >
+      <div className="flex flex-wrap gap-6 p-6 justify-center">
         {/* Filters */}
         <div
-          style={{
-            minWidth: "250px",
-            minHeight: "500px",
-            backgroundColor: darkMode ? "#1e1e1e" : "#f5f5f5",
-            padding: "20px",
-            borderRadius: "8px",
-          }}
+          className={`min-w-[260px] min-h-[500px] p-5 rounded-lg shadow-md ${
+            darkMode ? "bg-[#1f1f1f]" : "bg-gray-100"
+          }`}
         >
-          {/* Price */}
+          {/* Price Filter */}
           <div>
-            <label>
-              <strong>Price Range: ₹0 - ₹{priceRange}</strong>
+            <label className="font-bold block mb-1">
+              Price Range: ₹0 - ₹{priceRange}
             </label>
             <input
               type="range"
@@ -179,75 +153,57 @@ export default function Home({
               step="50"
               value={priceRange}
               onChange={(e) => setPriceRange(Number(e.target.value))}
-              style={{
-                width: "100%",
-                accentColor: "#febd69",
-              }}
+              className="w-full accent-yellow-500 mb-4"
             />
           </div>
 
-          {/* Brand */}
-          <div style={{ marginTop: "20px" }}>
-            <strong>Brand</strong>
+          {/* Brand Filter */}
+          <div className="mt-4">
+            <h4 className="font-bold mb-1">Brand</h4>
             {(showAllBrands ? brands : brands.slice(0, 6)).map((brand, i) => (
-              <div key={i}>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={selectedBrands.includes(brand)}
-                    onChange={() => handleBrandChange(brand)}
-                  />{" "}
-                  {brand}
-                </label>
-              </div>
+              <label key={i} className="block text-sm">
+                <input
+                  type="checkbox"
+                  className="mr-2"
+                  checked={selectedBrands.includes(brand)}
+                  onChange={() => handleBrandChange(brand)}
+                />
+                {brand}
+              </label>
             ))}
             {brands.length > 6 && (
               <button
-                onClick={() => setShowAllBrands((prev) => !prev)}
-                style={{
-                  marginTop: "8px",
-                  background: "none",
-                  border: "none",
-                  color: "#007BFF",
-                  cursor: "pointer",
-                  textDecoration: "underline",
-                  padding: 0,
-                }}
+                className="text-blue-500 underline mt-2 text-sm"
+                onClick={() => setShowAllBrands(!showAllBrands)}
               >
                 {showAllBrands ? "View Less ▲" : "View More ▼"}
               </button>
             )}
           </div>
 
-          {/* Rating */}
-          <div style={{ marginTop: "20px" }}>
-            <strong>Rating</strong>
+          {/* Rating Filter */}
+          <div className="mt-6">
+            <h4 className="font-bold mb-1">Rating</h4>
             {[5, 4, 3, 2, 1].map((r) => (
-              <div key={r}>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={selectedRating === r}
-                    onChange={() => handleRatingChange(r)}
-                  />{" "}
-                  {r}★ & above
-                </label>
-              </div>
+              <label key={r} className="block text-sm">
+                <input
+                  type="checkbox"
+                  className="mr-2"
+                  checked={selectedRating === r}
+                  onChange={() => handleRatingChange(r)}
+                />
+                {r}★ & above
+              </label>
             ))}
           </div>
 
-          {/* Sort */}
-          <div style={{ marginTop: "20px" }}>
-            <strong>Sort By:</strong>
+          {/* Sort By */}
+          <div className="mt-6">
+            <h4 className="font-bold mb-1">Sort By</h4>
             <select
               value={sortOption}
               onChange={(e) => setSortOption(e.target.value)}
-              style={{
-                width: "100%",
-                marginTop: "8px",
-                padding: "6px",
-                borderRadius: "4px",
-              }}
+              className="w-full mt-1 p-2 rounded border"
             >
               <option value="">-- Select --</option>
               <option value="priceLowHigh">Price: Low to High</option>
@@ -258,17 +214,8 @@ export default function Home({
           </div>
         </div>
 
-        {/* Product Grid */}
-        <div
-          className="product-grid"
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: "20px",
-            justifyContent: "center",
-            flex: 1,
-          }}
-        >
+        {/* Products */}
+        <div className="flex flex-wrap justify-center gap-6 flex-1">
           {paginatedProducts.map((product) => (
             <ProductCard
               key={product.id}
@@ -281,21 +228,19 @@ export default function Home({
         </div>
       </div>
 
-      {/* Pagination Controls */}
-      <div style={{ marginTop: "30px", textAlign: "center" }}>
+      {/* Pagination */}
+      <div className="text-center mt-8 pb-8">
         <button
           onClick={() => {
             setCurrentPage((prev) => Math.max(prev - 1, 1));
             window.scrollTo({ top: 0, behavior: "smooth" });
           }}
           disabled={currentPage === 1}
-          style={{
-            padding: "8px 16px",
-            marginRight: "10px",
-            cursor: currentPage === 1 ? "not-allowed" : "pointer",
-            border: "none",
-            outline: "none",
-          }}
+          className={`px-4 py-2 mr-2 rounded ${
+            currentPage === 1
+              ? "bg-gray-300 cursor-not-allowed"
+              : "bg-[#febd69] hover:bg-[#f5b041]"
+          }`}
         >
           Prev
         </button>
@@ -307,16 +252,11 @@ export default function Home({
               setCurrentPage(i + 1);
               window.scrollTo({ top: 0, behavior: "smooth" });
             }}
-            style={{
-              padding: "8px 12px",
-              margin: "0 5px",
-              backgroundColor: currentPage === i + 1 ? "#febd69" : "#e0e0e0",
-              fontWeight: currentPage === i + 1 ? "bold" : "normal",
-              borderRadius: "4px",
-              cursor: "pointer",
-              border: "none",
-              outline: "none",
-            }}
+            className={`px-3 py-1 mx-1 rounded ${
+              currentPage === i + 1
+                ? "bg-yellow-500 font-bold"
+                : "bg-gray-200 hover:bg-gray-300"
+            }`}
           >
             {i + 1}
           </button>
@@ -328,11 +268,11 @@ export default function Home({
             window.scrollTo({ top: 0, behavior: "smooth" });
           }}
           disabled={currentPage === totalPages}
-          style={{
-            padding: "8px 16px",
-            marginLeft: "10px",
-            cursor: currentPage === totalPages ? "not-allowed" : "pointer",
-          }}
+          className={`px-4 py-2 ml-2 rounded ${
+            currentPage === totalPages
+              ? "bg-gray-300 cursor-not-allowed"
+              : "bg-yellow-500 hover:bg-[#f5b041]"
+          }`}
         >
           Next
         </button>

@@ -5,22 +5,10 @@ export default function BackButton({ label = "Back" }) {
   const navigate = useNavigate();
 
   return (
-    <div style={{ marginTop: "40px", marginBottom: "20px", width: "100%" }}>
+    <div className="mt-10 mb-5 w-full ">
       <button
         onClick={() => navigate(-1)}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "8px",
-          backgroundColor: "#FFA41C",
-          color: "#fff",
-          border: "none",
-          outline: "none",
-          padding: "8px 14px",
-          borderRadius: "5px",
-          cursor: "pointer",
-          fontSize: "16px",
-        }}
+        className="flex items-center gap-2 bg-yellow-500 text-white px-2 py-1 rounded hover:bg-[#f39c12] transition duration-200"
       >
         <ArrowLeft size={18} />
         {label}

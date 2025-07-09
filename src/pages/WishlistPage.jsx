@@ -46,60 +46,47 @@ export default function WishlistPage({ wishlist, addToCart, toggleFavorite }) {
     allProducts.find((p) => p.id === lastItem?.id)?.category || null;
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        padding: "20px",
-        backgroundColor: "#121212",
-        color: "#fff",
-        minHeight: "100vh",
-        alignItems: "center",
-      }}
-    >
-      {/* Back button with top margin and left alignment */}
-      <div style={{ width: "100%", marginTop: "40px" }}>
-        <BackButton />
-      </div>
-
-      <h1 style={{ marginBottom: "20px" }}>❤️ My Wishlist</h1>
-
-      {wishlist.length === 0 ? (
-        <h3>No Item in Wishlist..</h3>
-      ) : (
-        <div
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: "20px",
-            justifyContent: "center",
-            width: "100%",
-            maxWidth: "1200px",
-          }}
-        >
-          {wishlist.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              addToCart={handleAddToCart}
-              toggleFavorite={toggleFavorite}
-              isFavorite={true}
-            />
-          ))}
+    <div className="min-h-screen px-4 py-8 bg-white dark:bg-zinc-900 text-black dark:text-white">
+      <div className="max-w-6xl mx-auto">
+        {/* Back Button */}
+        <div className="mb-6">
+          <BackButton />
         </div>
-      )}
 
-      {/* Recommended section */}
-      <div style={{ width: "100%", maxWidth: "900px", marginTop: "40px" }}>
+        <h1 className="text-2xl font-semibold mb-6 text-center">
+          ❤️ My Wishlist
+        </h1>
+
+        {wishlist.length === 0 ? (
+          <h3 className="text-center text-lg text-gray-600 dark:text-gray-300">
+            No Item in Wishlist..
+          </h3>
+        ) : (
+          <div className="flex flex-wrap justify-center gap-6">
+            {wishlist.map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                addToCart={handleAddToCart}
+                toggleFavorite={toggleFavorite}
+                isFavorite={true}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Recommended Section */}
         {wishlist.length > 0 && lastItemCategory && (
-          <RecommendedProducts
-            currentProductId={lastItem?.id}
-            category={lastItemCategory}
-            heading="You May Also Like"
-            onAddToCart={addToCart}
-            onToggleWishlist={toggleFavorite}
-            wishlistItems={wishlist}
-          />
+          <div className="mt-10">
+            <RecommendedProducts
+              currentProductId={lastItem?.id}
+              category={lastItemCategory}
+              heading="You May Also Like"
+              onAddToCart={addToCart}
+              onToggleWishlist={toggleFavorite}
+              wishlistItems={wishlist}
+            />
+          </div>
         )}
       </div>
     </div>

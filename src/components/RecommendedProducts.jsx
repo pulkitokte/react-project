@@ -50,96 +50,54 @@ export default function RecommendedProducts({
   if (!recommended.length) return null;
 
   return (
-    <div style={{ marginTop: "40px" }}>
-      <h3
-        style={{
-          fontSize: "22px",
-          fontWeight: "bold",
-          marginBottom: "20px",
-        }}
-      >
-        {heading}
-      </h3>
+    <div className="mt-10">
+      <h3 className="text-xl font-bold mb-5">{heading}</h3>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+      <div className="flex flex-col gap-5">
         {recommended.map((item) => {
           const inWishlist = wishlistItems.some((w) => w.id === item.id);
 
           return (
             <div
               key={item.id}
-              style={{
-                display: "flex",
-                gap: "20px",
-                padding: "15px",
-                border: "1px solid #ddd",
-                borderRadius: "8px",
-                alignItems: "center",
-                backgroundColor: "#fff",
-              }}
-              className="dark:bg-zinc-800 dark:text-white"
+              className="flex items-center gap-5 p-4 rounded-md border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 transition hover:shadow"
             >
               {/* Product Image */}
               <img
                 src={item.thumbnail}
                 alt={item.title}
                 onClick={() => navigate(`/product/${item.id}`)}
-                style={{
-                  width: "100px",
-                  height: "100px",
-                  objectFit: "cover",
-                  borderRadius: "6px",
-                  cursor: "pointer",
-                }}
+                className="w-24 h-24 object-cover rounded cursor-pointer"
               />
 
               {/* Info Section */}
               <div
                 onClick={() => navigate(`/product/${item.id}`)}
-                style={{ flex: 1, cursor: "pointer" }}
+                className="flex-1 cursor-pointer"
               >
-                <h4 style={{ fontWeight: "600", fontSize: "16px" }}>
-                  {item.title}
-                </h4>
-                <p style={{ color: "#888", margin: "4px 0" }}>₹ {item.price}</p>
-                <p style={{ fontSize: "14px", color: "#FFA41C" }}>
+                <h4 className="font-semibold text-base">{item.title}</h4>
+                <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
+                  ₹ {item.price}
+                </p>
+                <p className="text-yellow-500 text-sm">
                   {"★".repeat(Math.round(item.rating))}
                 </p>
               </div>
 
               {/* Buttons */}
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "10px",
-                }}
-              >
+              <div className="flex flex-col gap-2">
                 <button
                   onClick={() =>
                     onAddToCart({ ...item, image: item.thumbnail })
                   }
-                  style={{
-                    backgroundColor: "#FFA41C",
-                    color: "#fff",
-                    border: "none",
-                    padding: "8px 12px",
-                    borderRadius: "4px",
-                    cursor: "pointer",
-                    fontSize: "14px",
-                  }}
+                  className="bg-yellow-500 text-white px-4 py-1.5 rounded text-sm hover:bg-[#f39c12] transition"
                 >
                   Add to Cart
                 </button>
 
                 <button
                   onClick={() => onToggleWishlist(item)}
-                  style={{
-                    fontSize: "18px",
-                    background: "transparent",
-                    border: "none",
-                    cursor: "pointer",
-                  }}
+                  className="text-xl"
                 >
                   {inWishlist ? "❤️" : "🤍"}
                 </button>

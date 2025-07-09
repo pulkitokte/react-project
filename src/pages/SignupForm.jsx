@@ -1,7 +1,13 @@
 import { useState } from "react";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { auth, db } from "../firebase";
-import { doc, setDoc } from "firebase/firestore";
+import {
+  doc,
+  setDoc,
+  collection,
+  addDoc,
+  serverTimestamp,
+} from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { Eye, EyeOff } from "lucide-react";
@@ -15,6 +21,7 @@ export default function SignupForm() {
   const [dob, setDob] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [address, setAddress] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showPolicy, setShowPolicy] = useState(false);
@@ -34,6 +41,12 @@ export default function SignupForm() {
   };
 
   const passwordStrength = getPasswordStrength(password);
+
+  const strengthColors = {
+    Weak: "text-red-500",
+    Medium: "text-orange-500",
+    Strong: "text-green-600",
+  };
 
   const isValidDOB = (dateStr) => {
     const regex = /^\d{2}\/\d{2}\/\d{4}$/;
@@ -89,22 +102,33 @@ export default function SignupForm() {
         email,
         password
       );
+      const user = userCredential.user;
 
-      await updateProfile(userCredential.user, { displayName: name });
+      await updateProfile(user, { displayName: name });
 
       const age = calculateAge(dob);
 
-
-      await setDoc(doc(db, "users", userCredential.user.uid), {
-        uid: userCredential.user.uid,
+      await setDoc(doc(db, "users", user.uid), {
+        uid: user.uid,
         displayName: name,
         email,
         phone,
         countryCode,
         gender,
         age,
-        dob, // already in dd/mm/yyyy format
+        dob,
       });
+
+      if (address.trim()) {
+        await addDoc(collection(db, "users", user.uid, "addresses"), {
+          name,
+          address,
+          phone,
+          countryCode,
+          label: "Home",
+          createdAt: serverTimestamp(),
+        });
+      }
 
       localStorage.setItem("username", name);
       localStorage.removeItem("cart");
@@ -119,8 +143,11 @@ export default function SignupForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} style={styles.form}>
-      <h2 style={styles.title}>Sign Up</h2>
+    <form
+      onSubmit={handleSubmit}
+      className="max-w-md mx-auto mt-10 p-6 bg-white shadow-md rounded-lg space-y-4"
+    >
+      <h2 className="text-2xl font-bold text-center mb-2">Sign Up</h2>
 
       <input
         type="text"
@@ -128,7 +155,7 @@ export default function SignupForm() {
         onChange={(e) => setName(e.target.value)}
         placeholder="Full Name"
         required
-        style={styles.input}
+        className="w-full px-4 py-2 border rounded focus:outline-none focus:ring focus:border-blue-400"
       />
 
       <input
@@ -137,22 +164,14 @@ export default function SignupForm() {
         onChange={(e) => setEmail(e.target.value)}
         placeholder="Email"
         required
-        style={styles.input}
+        className="w-full px-4 py-2 border rounded focus:outline-none focus:ring focus:border-blue-400"
       />
 
-      {/* Mobile Number */}
-      <div
-        style={{
-          display: "flex",
-          gap: "10px",
-          alignItems: "center",
-          margin: "10px",
-        }}
-      >
+      <div className="flex items-center gap-2">
         <select
           value={countryCode}
           onChange={(e) => setCountryCode(e.target.value)}
-          style={{ padding: "10px", borderRadius: "5px" }}
+          className="px-3 py-2 border rounded"
         >
           <option value="+91">+91 (India)</option>
           <option value="+1">+1 (USA)</option>
@@ -167,16 +186,15 @@ export default function SignupForm() {
           }}
           placeholder="Mobile Number"
           required
-          style={styles.input}
+          className="flex-1 px-4 py-2 border rounded focus:outline-none"
         />
       </div>
 
-      {/* Gender */}
       <select
         value={gender}
         onChange={(e) => setGender(e.target.value)}
         required
-        style={styles.input}
+        className="w-full px-4 py-2 border rounded focus:outline-none"
       >
         <option value="">Select Gender</option>
         <option value="Male">Male</option>
@@ -184,46 +202,51 @@ export default function SignupForm() {
         <option value="Other">Other</option>
       </select>
 
-      {/* DOB in DD/MM/YYYY */}
       <input
         type="text"
         value={dob}
         onChange={(e) => {
           const input = e.target.value;
-          if (/^\d{0,2}\/?\d{0,2}\/?\d{0,4}$/.test(input)) {
-            setDob(input);
-          }
+          if (/^\d{0,2}\/?\d{0,2}\/?\d{0,4}$/.test(input)) setDob(input);
         }}
         placeholder="DD/MM/YYYY"
         required
-        style={styles.input}
+        className="w-full px-4 py-2 border rounded focus:outline-none"
+      />
+
+      <input
+        type="text"
+        placeholder="Address (optional)"
+        value={address}
+        onChange={(e) => setAddress(e.target.value)}
+        className="w-full px-4 py-2 border rounded focus:outline-none"
       />
 
       {/* Password */}
-      <div style={styles.passwordField}>
+      <div className="relative">
         <input
           type={showPassword ? "text" : "password"}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Password"
           required
-          style={styles.input}
           onFocus={() => setShowPolicy(true)}
           onBlur={() => setShowPolicy(false)}
+          className="w-full px-4 py-2 border rounded focus:outline-none"
         />
         <button
           type="button"
           onClick={() => setShowPassword((prev) => !prev)}
-          style={styles.toggle}
+          className="absolute right-3 top-2.5 text-gray-500"
         >
           {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
         </button>
       </div>
 
       {showPolicy && (
-        <div style={styles.tooltip}>
+        <div className="text-sm bg-gray-100 border p-3 rounded text-gray-700">
           🔐 Password must be at least:
-          <ul style={{ margin: "5px 0 0 20px", padding: 0 }}>
+          <ul className="ml-5 list-disc">
             <li>8 characters</li>
             <li>1 uppercase letter</li>
             <li>1 number</li>
@@ -233,107 +256,37 @@ export default function SignupForm() {
 
       {password && (
         <div
-          style={{
-            ...styles.strength,
-            color: strengthColors[passwordStrength],
-          }}
+          className={`text-sm font-medium ${strengthColors[passwordStrength]}`}
         >
           Password Strength: {passwordStrength}
         </div>
       )}
 
       {/* Confirm Password */}
-      <div style={styles.passwordField}>
+      <div className="relative">
         <input
           type={showConfirmPassword ? "text" : "password"}
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
           placeholder="Confirm Password"
           required
-          style={styles.input}
+          className="w-full px-4 py-2 border rounded focus:outline-none"
         />
         <button
           type="button"
           onClick={() => setShowConfirmPassword((prev) => !prev)}
-          style={styles.toggle}
+          className="absolute right-3 top-2.5 text-gray-500"
         >
           {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
         </button>
       </div>
 
-      <button type="submit" style={styles.button}>
+      <button
+        type="submit"
+        className="w-full py-2 bg-yellow-400 text-black font-bold rounded hover:bg-yellow-500 transition duration-200"
+      >
         Sign Up
       </button>
     </form>
   );
 }
-
-const strengthColors = {
-  Weak: "red",
-  Medium: "#FFA500",
-  Strong: "green",
-};
-
-const styles = {
-  form: {
-    display: "flex",
-    flexDirection: "column",
-    maxWidth: "400px",
-    margin: "40px auto",
-    padding: "20px",
-    borderRadius: "8px",
-    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
-    backgroundColor: "#fff",
-  },
-  title: {
-    margin: "10px 0",
-    textAlign: "center",
-    color: "#333",
-  },
-  input: {
-    padding: "10px",
-    margin: "10px",
-    border: "1px solid #ccc",
-    borderRadius: "5px",
-    outline: "none",
-    width: "100%",
-  },
-  passwordField: {
-    position: "relative",
-    display: "flex",
-    alignItems: "center",
-    width: "110%",
-  },
-  toggle: {
-    position: "absolute",
-    right: "20px",
-    background: "none",
-    border: "none",
-    cursor: "pointer",
-    fontSize: "18px",
-  },
-  strength: {
-    margin: "5px 15px 10px",
-    fontWeight: "bold",
-  },
-  tooltip: {
-    fontSize: "14px",
-    margin: "5px 10px",
-    backgroundColor: "#f0f0f0",
-    padding: "8px 12px",
-    borderRadius: "6px",
-    border: "1px solid #ccc",
-    color: "#333",
-  },
-  button: {
-    margin: "20px auto 0",
-    padding: "10px 20px",
-    width: "50%",
-    borderRadius: "5px",
-    border: "none",
-    backgroundColor: "#febd69",
-    color: "#000",
-    fontWeight: "bold",
-    cursor: "pointer",
-  },
-};

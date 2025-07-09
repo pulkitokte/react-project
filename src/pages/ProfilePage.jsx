@@ -79,24 +79,24 @@ export default function ProfilePage() {
     auth.signOut().then(() => navigate("/login"));
   };
 
-  if (!user) return <p>Loading profile...</p>;
+  if (!user) return <p className="text-center py-10">Loading profile...</p>;
 
   const { displayName = "Anonymous", email, photoURL } = user;
   const { phone, countryCode, gender, dob, age } = userData || {};
 
   return (
-    <div style={styles.container}>
-      <h2>
+    <div className="max-w-4xl mx-auto p-10 font-sans">
+      <h2 className="text-2xl font-semibold flex items-center gap-2 mb-6">
         <User size={24} /> My Profile
       </h2>
 
-      <div style={styles.section}>
+      <div className="flex gap-6 items-center mb-6">
         <img
           src={photoURL || "https://placehold.co/80x80"}
           alt="Profile"
-          style={styles.avatar}
+          className="w-20 h-20 rounded-full object-cover"
         />
-        <div>
+        <div className="space-y-1">
           <p>
             <strong>Name:</strong> {displayName}
           </p>
@@ -107,11 +107,9 @@ export default function ProfilePage() {
             <strong>Mobile:</strong> {countryCode || ""}{" "}
             {phone || "Not provided"}
           </p>
-
           <p>
             <strong>Age:</strong> {age || "Not available"}
           </p>
-
           <p>
             <strong>Gender:</strong> {gender || "Not provided"}
           </p>
@@ -121,20 +119,23 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      <hr style={{ margin: "20px 0" }} />
+      <hr className="my-8 border-gray-300" />
 
-      <h3>
+      <h3 className="text-xl font-semibold flex items-center gap-2 mb-4">
         <ScrollText size={20} /> My Orders
       </h3>
 
       {loading ? (
-        <p>Loading orders...</p>
+        <p className="text-gray-500">Loading orders...</p>
       ) : orders.length === 0 ? (
-        <p>No orders placed yet.</p>
+        <p className="text-gray-500">No orders placed yet.</p>
       ) : (
-        <ul style={styles.orderList}>
+        <ul className="space-y-6">
           {orders.map((order, index) => (
-            <li key={order.id} style={styles.orderItem}>
+            <li
+              key={order.id}
+              className="border border-gray-700 bg-gray-900 text-white p-4 rounded-lg"
+            >
               <p>
                 <strong>Order #{index + 1}</strong>
               </p>
@@ -156,27 +157,25 @@ export default function ProfilePage() {
               <p>
                 <strong>Status:</strong> {getOrderStatus(order.trackingStatus)}
               </p>
-              <p>
-                <strong>📦 Products:</strong>
-              </p>
-              <ul>
+              <p className="mt-2 font-semibold">📦 Products:</p>
+              <ul className="mt-1 space-y-2">
                 {(order.cart || order.items || []).map((item, i) => (
-                  <li key={i} style={styles.productItem}>
+                  <li key={i} className="flex items-center gap-4">
                     <img
                       src={item.image}
                       alt={item.title}
-                      style={styles.productImage}
+                      className="w-12 h-12 object-cover rounded-md"
                     />
                     <div>
                       <p>{item.title}</p>
-                      <p>
+                      <p className="text-sm text-gray-300">
                         ₹{item.price} × {item.quantity}
                       </p>
                     </div>
                   </li>
                 ))}
               </ul>
-              <p>
+              <p className="mt-2">
                 <strong>Total:</strong> ₹{order.totalPrice || order.total}
               </p>
             </li>
@@ -184,91 +183,32 @@ export default function ProfilePage() {
         </ul>
       )}
 
-      <hr style={{ margin: "20px 0" }} />
+      <hr className="my-8 border-gray-300" />
 
-      <h3>
+      <h3 className="text-xl font-semibold flex items-center gap-2 mb-4">
         <Settings size={20} /> Options
       </h3>
 
-      <div style={styles.options}>
-        <button onClick={() => navigate("/wishlist")} style={styles.optionBtn}>
+      <div className="flex flex-wrap gap-4">
+        <button
+          onClick={() => navigate("/wishlist")}
+          className="bg-[#232F3E] text-white px-4 py-2 rounded-md hover:bg-[#1e2a34]"
+        >
           ❤️ My Wishlist
         </button>
-        <button onClick={() => navigate("/address")} style={styles.optionBtn}>
+        <button
+          onClick={() => navigate("/address")}
+          className="bg-[#232F3E] text-white px-4 py-2 rounded-md hover:bg-[#1e2a34]"
+        >
           📦 Manage Address
         </button>
-        <button onClick={handleLogout} style={styles.logoutBtn}>
+        <button
+          onClick={handleLogout}
+          className="bg-red-600 text-white px-4 py-2 rounded-md flex items-center gap-2 hover:bg-red-700"
+        >
           <LogOut size={16} /> Logout
         </button>
       </div>
     </div>
   );
 }
-
-const styles = {
-  container: {
-    padding: "30px",
-    maxWidth: "800px",
-    margin: "auto",
-    fontFamily: "sans-serif",
-  },
-  section: {
-    display: "flex",
-    gap: "20px",
-    alignItems: "center",
-  },
-  avatar: {
-    width: "80px",
-    height: "80px",
-    borderRadius: "50%",
-    objectFit: "cover",
-  },
-  orderList: {
-    listStyle: "none",
-    padding: 0,
-  },
-  orderItem: {
-    border: "1px solid #ccc",
-    padding: "15px",
-    borderRadius: "6px",
-    marginBottom: "20px",
-    backgroundColor: "#111",
-    color: "#fff",
-  },
-  productItem: {
-    display: "flex",
-    gap: "10px",
-    alignItems: "center",
-    marginBottom: "10px",
-  },
-  productImage: {
-    width: "50px",
-    height: "50px",
-    objectFit: "cover",
-    borderRadius: "6px",
-  },
-  options: {
-    display: "flex",
-    gap: "10px",
-    flexWrap: "wrap",
-  },
-  optionBtn: {
-    backgroundColor: "#232F3E",
-    color: "white",
-    border: "none",
-    padding: "10px 20px",
-    borderRadius: "6px",
-    cursor: "pointer",
-  },
-  logoutBtn: {
-    backgroundColor: "#dc3545",
-    color: "white",
-    border: "none",
-    padding: "10px 20px",
-    borderRadius: "6px",
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    gap: "6px",
-  },
-};

@@ -10,7 +10,6 @@ import {
   updateDoc,
   setDoc,
 } from "firebase/firestore";
-
 import { onAuthStateChanged } from "firebase/auth";
 
 export default function AddressPage() {
@@ -91,48 +90,49 @@ export default function AddressPage() {
   };
 
   return (
-    <div style={{ padding: "20px", paddingTop: "80px" }}>
+    <div className="p-5 pt-20 max-w-2xl mx-auto font-sans">
       <BackButton />
-      <h2>🏠 Manage Addresses</h2>
+      <h2 className="text-2xl font-semibold mb-6">🏠 Manage Addresses</h2>
 
       {addresses.length === 0 ? (
-        <p>No saved addresses yet.</p>
+        <p className="text-gray-600">No saved addresses yet.</p>
       ) : (
-        <ul style={{ listStyle: "none", padding: 0 }}>
+        <ul className="space-y-4 mb-8">
           {addresses.map((addr) => (
             <li
               key={addr.label}
-              style={{
-                border: "1px solid #ccc",
-                padding: "10px",
-                borderRadius: "8px",
-                marginBottom: "15px",
-              }}
+              className="border border-gray-300 p-4 rounded-lg bg-white shadow-sm"
             >
-              <p>
-                <strong>{addr.label}</strong>
-              </p>
+              <p className="font-semibold text-lg">{addr.label}</p>
               <p>{addr.name}</p>
               <p>{addr.address}</p>
               <p>
                 {addr.countryCode} {addr.phone}
               </p>
-              <button onClick={() => handleEdit(addr)} style={styles.editBtn}>
-                ✏️ Edit
-              </button>
-              <button
-                onClick={() => handleDelete(addr.label)}
-                style={styles.deleteBtn}
-              >
-                🗑️ Delete
-              </button>
+              <div className="mt-3 flex gap-3">
+                <button
+                  onClick={() => handleEdit(addr)}
+                  className="bg-yellow-400 text-black px-3 py-1 rounded hover:bg-yellow-500 transition"
+                >
+                  ✏️ Edit
+                </button>
+                <button
+                  onClick={() => handleDelete(addr.label)}
+                  className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition"
+                >
+                  🗑️ Delete
+                </button>
+              </div>
             </li>
           ))}
         </ul>
       )}
 
-      <h3>{isEditing !== null ? "✏️ Edit Address" : "➕ Add New Address"}</h3>
-      <form onSubmit={handleSubmit} style={{ maxWidth: "400px" }}>
+      <h3 className="text-xl font-medium mb-4">
+        {isEditing !== null ? "✏️ Edit Address" : "➕ Add New Address"}
+      </h3>
+
+      <form onSubmit={handleSubmit} className="space-y-4 max-w-md">
         <input
           type="text"
           name="label"
@@ -140,7 +140,7 @@ export default function AddressPage() {
           value={formData.label}
           onChange={handleInputChange}
           required
-          style={styles.input}
+          className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring focus:border-blue-400"
         />
         <input
           type="text"
@@ -149,7 +149,7 @@ export default function AddressPage() {
           value={formData.name}
           onChange={handleInputChange}
           required
-          style={styles.input}
+          className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring focus:border-blue-400"
         />
         <input
           type="text"
@@ -158,14 +158,14 @@ export default function AddressPage() {
           value={formData.address}
           onChange={handleInputChange}
           required
-          style={styles.input}
+          className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring focus:border-blue-400"
         />
-        <div style={{ display: "flex", gap: "10px" }}>
+        <div className="flex gap-4">
           <select
             name="countryCode"
             value={formData.countryCode}
             onChange={handleInputChange}
-            style={styles.input}
+            className="w-1/3 px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring focus:border-blue-400"
           >
             <option value="+91">🇮🇳 +91</option>
             <option value="+1">🇺🇸 +1</option>
@@ -179,45 +179,17 @@ export default function AddressPage() {
             value={formData.phone}
             onChange={handleInputChange}
             required
-            style={styles.input}
+            className="w-2/3 px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring focus:border-blue-400"
           />
         </div>
-        <button type="submit" style={styles.saveBtn}>
+        <button
+          type="submit"
+          className="bg-green-600 text-white px-5 py-2 rounded hover:bg-green-700 transition"
+        >
           {isEditing !== null ? "💾 Update" : "➕ Save"}
         </button>
       </form>
     </div>
   );
 }
-
-const styles = {
-  input: {
-    display: "block",
-    width: "100%",
-    marginBottom: "10px",
-    padding: "10px",
-    fontSize: "16px",
-  },
-  editBtn: {
-    marginRight: "10px",
-    backgroundColor: "#FFC107",
-    border: "none",
-    padding: "6px 12px",
-    cursor: "pointer",
-  },
-  deleteBtn: {
-    backgroundColor: "#DC3545",
-    color: "#fff",
-    border: "none",
-    padding: "6px 12px",
-    cursor: "pointer",
-  },
-  saveBtn: {
-    backgroundColor: "#28a745",
-    color: "white",
-    border: "none",
-    padding: "10px 15px",
-    borderRadius: "6px",
-    cursor: "pointer",
-  },
-};
+ 

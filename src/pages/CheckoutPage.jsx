@@ -1,4 +1,3 @@
-// ✅ Imports and setup remain the same
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -11,6 +10,7 @@ import {
   doc,
   setDoc,
   getDoc,
+  getDocs,
 } from "firebase/firestore";
 import { parsePhoneNumberFromString } from "libphonenumber-js";
 import { jsPDF } from "jspdf";
@@ -35,6 +35,7 @@ export default function CheckoutPage({ cartItems, setCartItems }) {
   const [sendInvoiceByEmail, setSendInvoiceByEmail] = useState(false);
   const [addresses, setAddresses] = useState([]);
   const [selectedAddressLabel, setSelectedAddressLabel] = useState("");
+  const [useSignupInfo, setUseSignupInfo] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     address: "",
@@ -54,7 +55,12 @@ export default function CheckoutPage({ cartItems, setCartItems }) {
         const docRef = doc(db, "addresses", user.uid);
         const snap = await getDoc(docRef);
         if (snap.exists()) {
-          setAddresses(snap.data().addresses || []);
+          const saved = snap.data().addresses || [];
+          setAddresses(saved);
+          if (saved.length > 0) {
+            setSelectedAddressLabel(saved[0].label);
+            setFormData(saved[0].data);
+          }
         }
       };
       fetchAddresses();
@@ -63,10 +69,51 @@ export default function CheckoutPage({ cartItems, setCartItems }) {
 
   useEffect(() => {
     if (selectedAddressLabel) {
-      const addr = addresses.find((a) => a.label === selectedAddressLabel);
-      if (addr) setFormData(addr.data);
+      const selected = addresses.find((a) => a.label === selectedAddressLabel);
+      if (selected) {
+        setFormData(selected.data);
+      }
     }
   }, [selectedAddressLabel]);
+
+  useEffect(() => {
+    const fetchSignupDetails = async () => {
+      if (!user?.uid) return;
+
+      if (useSignupInfo) {
+        try {
+          const [userSnap, addressSnap] = await Promise.all([
+            getDoc(doc(db, "users", user.uid)),
+            getDocs(collection(db, "users", user.uid, "addresses")),
+          ]);
+
+          const userData = userSnap.exists() ? userSnap.data() : {};
+          const addressData = !addressSnap.empty
+            ? addressSnap.docs[0].data()
+            : {};
+
+          setFormData({
+            name: userData.displayName || "",
+            phone: userData.phone || "",
+            countryCode: userData.countryCode || "+91",
+            address: addressData.address || "",
+          });
+        } catch (err) {
+          console.error("Error fetching signup info:", err);
+          toast.error("❌ Failed to load signup info");
+        }
+      } else {
+        setFormData({
+          name: "",
+          phone: "",
+          address: "",
+          countryCode: "+91",
+        });
+      }
+    };
+
+    fetchSignupDetails();
+  }, [useSignupInfo, user]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -163,8 +210,7 @@ export default function CheckoutPage({ cartItems, setCartItems }) {
         createdAt: serverTimestamp(),
       });
 
-      const trackingRef = doc(db, "tracking", orderId);
-      await setDoc(trackingRef, {
+      await setDoc(doc(db, "tracking", orderId), {
         status: {
           ordered: true,
           shipped: false,
@@ -174,7 +220,6 @@ export default function CheckoutPage({ cartItems, setCartItems }) {
         updatedAt: new Date().toLocaleString(),
       });
 
-      // 💾 Save address if labeled
       if (saveAsLabel && user?.uid) {
         const updatedAddresses = [
           ...addresses.filter((a) => a.label !== saveAsLabel),
@@ -187,7 +232,6 @@ export default function CheckoutPage({ cartItems, setCartItems }) {
         toast.success("📍 Address saved!");
       }
 
-      // 🛒 Clear cart
       setCartItems([]);
       localStorage.removeItem("cart");
 
@@ -209,173 +253,170 @@ export default function CheckoutPage({ cartItems, setCartItems }) {
   };
 
   return (
-    <div style={{ padding: "20px", paddingTop: "100px" }}>
-      <BackButton />
-      <h2>🧾 Checkout</h2>
+    <div className="px-4 pt-28 pb-10 min-h-screen bg-white dark:bg-zinc-900 text-black dark:text-white">
+      <div className="max-w-3xl mx-auto">
+        <BackButton />
+        <h2 className="text-2xl font-semibold mb-6">🧾 Checkout</h2>
 
-      {cartItems.length === 0 ? (
-        <p>🛒 Your cart is empty.</p>
-      ) : (
-        <>
-          <div style={{ marginBottom: "20px" }}>
-            {cartItems.map((item) => (
-              <div key={item.id} style={{ marginBottom: "10px" }}>
-                <strong>{item.title}</strong> × {item.quantity} = ₹
-                {(item.price * item.quantity).toFixed(2)}
-              </div>
-            ))}
-          </div>
-
-          <h3>Total: ₹{total.toFixed(2)}</h3>
-
-          {addresses.length > 0 && (
-            <>
-              <label>Select Saved Address: </label>
-              <select
-                value={selectedAddressLabel}
-                onChange={(e) => setSelectedAddressLabel(e.target.value)}
-                style={{ ...styles.input, marginBottom: "10px" }}
-              >
-                <option value="">-- Select Address --</option>
-                {addresses.map((addr) => (
-                  <option key={addr.label} value={addr.label}>
-                    {addr.label}
-                  </option>
-                ))}
-              </select>
-            </>
-          )}
-
-          <form onSubmit={handleSubmit}>
-            <input
-              type="text"
-              name="name"
-              placeholder="Full Name"
-              value={formData.name}
-              onChange={handleInputChange}
-              required
-              style={styles.input}
-            />
-            <input
-              type="text"
-              name="address"
-              placeholder="Address"
-              value={formData.address}
-              onChange={handleInputChange}
-              required
-              style={styles.input}
-            />
-            <div style={styles.phoneBlock}>
-              <select
-                value={formData.countryCode}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    countryCode: e.target.value,
-                  }))
-                }
-                style={styles.countrySelect}
-              >
-                {supportedCountries.map((c) => (
-                  <option key={c.code} value={c.code}>
-                    {c.name} ({c.code})
-                  </option>
-                ))}
-              </select>
-              <input
-                type="tel"
-                name="phone"
-                placeholder="Phone number"
-                value={formData.phone}
-                onChange={handleInputChange}
-                required
-                style={styles.phoneInput}
-              />
+        {cartItems.length === 0 ? (
+          <p className="text-lg">🛒 Your cart is empty.</p>
+        ) : (
+          <>
+            <div className="mb-6">
+              {cartItems.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex items-center gap-4 mb-4 p-3 bg-gray-100 dark:bg-zinc-800 rounded-lg"
+                >
+                  <img
+                    src={item.image || item.thumbnail}
+                    alt={item.title}
+                    className="w-20 h-20 object-contain rounded bg-white"
+                  />
+                  <div>
+                    <a
+                      href={`/product/${item.id}`}
+                      className="font-semibold text-yellow-500 hover:underline"
+                    >
+                      {item.title}
+                    </a>
+                    <p className="text-sm">
+                      Quantity: <strong>{item.quantity}</strong>
+                    </p>
+                    <p className="text-sm">
+                      Subtotal: ₹
+                      <strong>{(item.price * item.quantity).toFixed(2)}</strong>
+                    </p>
+                  </div>
+                </div>
+              ))}
             </div>
 
-            <input
-              type="text"
-              placeholder="Label this address (e.g. Home, Office)"
-              value={saveAsLabel}
-              onChange={(e) => setSaveAsLabel(e.target.value)}
-              style={styles.input}
-            />
+            <h3 className="text-xl font-medium mb-4">
+              Total: ₹{total.toFixed(2)}
+            </h3>
 
-            <label style={{ fontSize: "14px" }}>
+            <div className="mb-4">
+              <label className="text-sm">
+                <input
+                  type="checkbox"
+                  checked={useSignupInfo}
+                  onChange={(e) => setUseSignupInfo(e.target.checked)}
+                  className="mr-2"
+                />
+                Use saved info
+              </label>
+            </div>
+
+            {addresses.length > 0 && (
+              <div className="mb-4">
+                <label className="block text-sm mb-1">
+                  Select Saved Address:
+                </label>
+                <select
+                  value={selectedAddressLabel}
+                  onChange={(e) => setSelectedAddressLabel(e.target.value)}
+                  className="w-full p-2 border rounded"
+                >
+                  {addresses.map((addr) => (
+                    <option key={addr.label} value={addr.label}>
+                      {addr.label} — {addr.data.address}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-4">
               <input
-                type="checkbox"
-                checked={agreedToTerms}
-                onChange={(e) => setAgreedToTerms(e.target.checked)}
-                style={{ marginRight: "8px" }}
+                type="text"
+                name="name"
+                placeholder="Full Name"
+                value={formData.name}
+                onChange={handleInputChange}
+                required
+                className="w-full p-2 border rounded"
               />
-              I agree to the {" "}
-              <a href="/terms" target="_blank" rel="noreferrer">
-                Terms and Conditions
-              </a>
-            </label>
-
-            <div style={{ margin: "10px 0" }}>
-              <label style={{ fontSize: "14px" }}>
+              <input
+                type="text"
+                name="address"
+                placeholder="Address"
+                value={formData.address}
+                onChange={handleInputChange}
+                required
+                className="w-full p-2 border rounded"
+              />
+              <div className="flex gap-2">
+                <select
+                  value={formData.countryCode}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      countryCode: e.target.value,
+                    }))
+                  }
+                  className="p-2 border rounded w-1/3"
+                >
+                  {supportedCountries.map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {c.name} ({c.code})
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="tel"
+                  name="phone"
+                  placeholder="Phone number"
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                  required
+                  className="flex-1 p-2 border rounded"
+                />
+              </div>
+              <input
+                type="text"
+                placeholder="Label this address (e.g. Home, Office)"
+                value={saveAsLabel}
+                onChange={(e) => setSaveAsLabel(e.target.value)}
+                className="w-full p-2 border rounded"
+              />
+              <label className="text-sm">
+                <input
+                  type="checkbox"
+                  checked={agreedToTerms}
+                  onChange={(e) => setAgreedToTerms(e.target.checked)}
+                  className="mr-2"
+                />
+                I agree to the{" "}
+                <a
+                  href="/terms"
+                  className="text-blue-500 underline"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Terms and Conditions
+                </a>
+              </label>
+              <label className="text-sm block">
                 <input
                   type="checkbox"
                   checked={sendInvoiceByEmail}
                   onChange={(e) => setSendInvoiceByEmail(e.target.checked)}
-                  style={{ marginRight: "8px" }}
+                  className="mr-2"
                 />
                 Email invoice to me
               </label>
-            </div>
-
-            <button
-              type="submit"
-              style={styles.button}
-              disabled={loading || !agreedToTerms}
-            >
-              {loading ? "Placing Order..." : "✅ Place Order"}
-            </button>
-          </form>
-        </>
-      )}
+              <button
+                type="submit"
+                disabled={loading || !agreedToTerms}
+                className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 rounded disabled:opacity-50"
+              >
+                {loading ? "Placing Order..." : "✅ Place Order"}
+              </button>
+            </form>
+          </>
+        )}
+      </div>
     </div>
   );
 }
-
-const styles = {
-  input: {
-    display: "block",
-    width: "100%",
-    marginBottom: "10px",
-    padding: "10px",
-    fontSize: "16px",
-  },
-  button: {
-    backgroundColor: "#FFA41C",
-    color: "#fff",
-    border: "none",
-    padding: "12px 20px",
-    borderRadius: "4px",
-    fontWeight: "bold",
-    cursor: "pointer",
-  },
-  phoneBlock: {
-    display: "flex",
-    alignItems: "center",
-    marginBottom: "10px",
-  },
-  countrySelect: {
-    padding: "10px",
-    border: "1px solid #ccc",
-    borderRadius: "5px 0 0 5px",
-    fontSize: "16px",
-    outline: "none",
-  },
-  phoneInput: {
-    flex: 1,
-    padding: "10px",
-    fontSize: "16px",
-    border: "1px solid #ccc",
-    borderLeft: "none",
-    borderRadius: "0 5px 5px 0",
-    outline: "none",
-  },
-};

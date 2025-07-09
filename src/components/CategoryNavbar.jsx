@@ -19,53 +19,25 @@ const groupedCategories = {
   Automotive: ["automotive", "motorcycle"],
 };
 
-
 export default function CategoryNavbar({ onSelectCategory }) {
   const navigate = useNavigate();
 
   const handleClick = (value) => {
     onSelectCategory(value);
-    if (value === "all") navigate("/")
+    if (value === "all") navigate("/");
   };
 
   return (
-    <div style={styles.container}>
+    <div className="fixed top-[100px] left-0 right-0 z-40 bg-[#131921] py-2 px-4 flex gap-3 overflow-x-auto justify-center shadow-md">
       {Object.entries(groupedCategories).map(([label, value]) => (
         <button
           key={label}
           onClick={() => handleClick(value)}
-          style={styles.button}>
+          className="bg-[#232F3E] text-white px-4 py-2 rounded hover:bg-yellow-500 transition-all whitespace-nowrap text-sm font-medium"
+        >
           {label}
         </button>
       ))}
     </div>
   );
 }
-
-const styles = {
-  // In CategoryNavbar.jsx styles
-  container: {
-    position: "fixed",
-    top: "120px", // right below Navbar
-    left: 0,
-    right: 0,
-    zIndex: 1,
-    backgroundColor: "#131921",
-    padding: "10px",
-    display: "flex",
-    gap: "15px",
-    overflowX: "auto",
-    justifyContent: "center",
-  },
-
-  button: {
-    backgroundColor: "#232F3E",
-    color: "white",
-    border: "none",
-    padding: "8px 16px",
-    cursor: "pointer",
-    borderRadius: "4px",
-    whiteSpace: "nowrap",
-    transition: "transform 0.2s ease",
-  },
-};

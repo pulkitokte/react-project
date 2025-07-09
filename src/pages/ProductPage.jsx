@@ -1,3 +1,4 @@
+// same imports
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import axios from "axios";
@@ -42,8 +43,6 @@ export default function ProductPage({ addToCart }) {
     axios.get(`https://dummyjson.com/products/${id}`).then((res) => {
       setProduct(res.data);
       setMainImage(res.data.thumbnail);
-
-      // Track recent views
       if (user) saveRecentView(res.data);
     });
 
@@ -78,7 +77,6 @@ export default function ProductPage({ addToCart }) {
 
   const fetchRecentViews = async () => {
     if (!user) return;
-
     const q = query(
       collection(db, "recentViews"),
       where("userId", "==", user.uid),
@@ -88,7 +86,7 @@ export default function ProductPage({ addToCart }) {
     const snap = await getDocs(q);
     const data = snap.docs
       .map((doc) => ({ id: doc.id, ...doc.data() }))
-      .filter((item) => item.productId !== Number(id)); // exclude current product
+      .filter((item) => item.productId !== Number(id));
     setRecentViews(data);
   };
 
@@ -196,124 +194,124 @@ export default function ProductPage({ addToCart }) {
         ).toFixed(1)
       : null;
 
-  if (!product) return <p>Loading...</p>;
+  if (!product) return <p className="text-center mt-10">Loading...</p>;
 
   return (
-    <div style={styles.page}>
-      <div style={{ width: "100%", marginBottom: "20px" }}>
+    <div className="flex flex-wrap justify-center gap-10 p-10 mt-10">
+      <div className="w-full mb-5">
         <BackButton />
       </div>
 
       {/* 🖼️ Image Section */}
-      <div style={styles.imageSection}>
+      <div className="max-w-md">
         <Zoom>
-          <img src={mainImage} alt={product.title} style={styles.mainImg} />
+          <img src={mainImage} alt={product.title} className="rounded-lg" />
         </Zoom>
-        <div style={styles.thumbnailContainer}>
+        <div className="flex flex-wrap justify-center gap-2 mt-4">
           {product.images?.map((img, i) => (
             <img
               key={i}
               src={img}
               alt="thumb"
               onClick={() => setMainImage(img)}
-              style={{
-                ...styles.thumb,
-                border:
-                  mainImage === img ? "2px solid #FFA41C" : "1px solid #ccc",
-              }}
+              className={`w-14 h-14 object-contain rounded cursor-pointer border ${
+                mainImage === img ? "border-yellow-500" : "border-gray-300"
+              }`}
             />
           ))}
         </div>
       </div>
 
       {/* 📦 Product Info */}
-      <div style={styles.info}>
-        <h2>{product.title}</h2>
+      <div className="max-w-lg space-y-4">
+        <h2 className="text-2xl font-bold">{product.title}</h2>
         <p>{product.description}</p>
-        <p>
+        <p className="text-sm text-gray-500">
           <strong>Brand:</strong> {product.brand}
         </p>
-        <p>
+        <p className="text-sm text-gray-500">
           <strong>Category:</strong> {product.category}
         </p>
-        <h3>₹ {product.price}</h3>
+        <h3 className="text-xl font-semibold text-yellow-500">
+          ₹{product.price}
+        </h3>
         <button
           onClick={() => addToCart({ ...product, image: product.thumbnail })}
-          style={styles.btn}
+          className="bg-yellow-500 text-white py-2 px-4 rounded mt-2"
         >
           Add to Cart
         </button>
 
         {/* ⭐ Reviews */}
-        <div style={{ marginTop: "40px" }}>
-          <h3>Customer Reviews</h3>
+        <div className="mt-10">
+          <h3 className="text-lg font-semibold mb-2">Customer Reviews</h3>
           {averageRating && (
-            <p>
+            <p className="mb-2 text-sm text-yellow-500">
               ⭐ {averageRating} / 5 ({reviews.length} reviews)
             </p>
           )}
           {user && (
-            <>
-              <div style={{ margin: "10px 0" }}>
-                <label>Rating: </label>
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <span
-                    key={star}
-                    onClick={() => setNewRating(star)}
-                    style={{
-                      cursor: "pointer",
-                      color: star <= newRating ? "#FFA41C" : "#ccc",
-                      fontSize: "20px",
-                    }}
-                  >
-                    ★
-                  </span>
-                ))}
-              </div>
+            <div>
+              <label className="block mb-2">Rating:</label>
+              {[1, 2, 3, 4, 5].map((star) => (
+                <span
+                  key={star}
+                  onClick={() => setNewRating(star)}
+                  className={`text-2xl cursor-pointer ${
+                    star <= newRating ? "text-yellow-500" : "text-gray-400"
+                  }`}
+                >
+                  ★
+                </span>
+              ))}
               <textarea
                 rows="3"
                 placeholder="Write your review..."
                 value={newReview}
                 onChange={(e) => setNewReview(e.target.value)}
-                style={styles.textArea}
+                className="w-full p-3 border border-gray-300 rounded mt-3 mb-2"
               />
-              <button onClick={handleSubmitReview} style={styles.btn}>
+              <button
+                onClick={handleSubmitReview}
+                className="bg-yellow-500 text-white px-4 py-2 rounded"
+              >
                 {editId ? "Update Review" : "Submit Review"}
               </button>
-            </>
+            </div>
           )}
 
-          <hr style={{ margin: "20px 0" }} />
+          <hr className="my-5" />
 
           {reviews.length === 0 ? (
             <p>No reviews yet.</p>
           ) : (
             reviews.map((rev) => (
-              <div key={rev.id} style={styles.reviewCard}>
-                <p>
+              <div
+                key={rev.id}
+                className="bg-gray-800 text-white p-4 rounded mb-4"
+              >
+                <p className="text-xs">
                   <strong>• </strong>
                   {rev.date?.seconds
                     ? format(new Date(rev.date.seconds * 1000), "PPP")
                     : "Just now"}
                 </p>
-                <p style={{ color: "#FFA41C" }}>
+                <p className="text-yellow-400">
                   {"★".repeat(rev.rating)} ({rev.rating}/5)
                 </p>
-                <p>
-                  <em>{rev.userName}</em>
-                </p>
+                <p className="italic text-sm">{rev.userName}</p>
                 <p>{rev.comment}</p>
                 {user?.uid === rev.userId && (
-                  <div style={{ marginTop: "8px" }}>
+                  <div className="mt-2">
                     <button
                       onClick={() => handleEditReview(rev)}
-                      style={styles.editBtn}
+                      className="bg-blue-500 text-white px-3 py-1 rounded mr-2"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => handleDeleteReview(rev.id)}
-                      style={styles.delBtn}
+                      className="bg-red-600 text-white px-3 py-1 rounded"
                     >
                       Delete
                     </button>
@@ -323,25 +321,33 @@ export default function ProductPage({ addToCart }) {
             ))
           )}
 
-          {/* 🟠 Q&A Section */}
-          <div style={{ marginTop: "40px" }}>
-            <h3>Product Questions & Answers</h3>
+          {/* 🟠 Q&A */}
+          <div className="mt-10">
+            <h3 className="text-lg font-semibold mb-2">
+              Product Questions & Answers
+            </h3>
             {user && (
-              <div style={{ marginBottom: "20px" }}>
+              <div className="mb-5">
                 <textarea
                   rows="2"
-                  placeholder="Ask a question about this product..."
+                  placeholder="Ask a question..."
                   value={newQuestion}
                   onChange={(e) => setNewQuestion(e.target.value)}
-                  style={styles.textArea}
+                  className="w-full p-3 border border-gray-300 rounded mb-2"
                 />
-                <button onClick={handleAskQuestion} style={styles.btn}>
+                <button
+                  onClick={handleAskQuestion}
+                  className="bg-yellow-500 text-white px-4 py-2 rounded"
+                >
                   Ask
                 </button>
               </div>
             )}
             {questions.map((q) => (
-              <div key={q.id} style={styles.reviewCard}>
+              <div
+                key={q.id}
+                className="bg-gray-800 text-white p-4 rounded mb-3"
+              >
                 <p>
                   <strong>Q:</strong> {q.question}
                 </p>
@@ -351,7 +357,7 @@ export default function ProductPage({ addToCart }) {
                   </p>
                 ) : (
                   user && (
-                    <div>
+                    <div className="mt-2">
                       <input
                         type="text"
                         placeholder="Write an answer..."
@@ -362,16 +368,11 @@ export default function ProductPage({ addToCart }) {
                             [q.id]: e.target.value,
                           }))
                         }
-                        style={{
-                          padding: "8px",
-                          border: "1px solid #ccc",
-                          width: "100%",
-                          marginTop: "5px",
-                        }}
+                        className="w-full p-2 border border-gray-300 rounded mb-2"
                       />
                       <button
                         onClick={() => handleAnswerQuestion(q.id)}
-                        style={styles.btn}
+                        className="bg-yellow-500 text-white px-4 py-1 rounded"
                       >
                         Answer
                       </button>
@@ -389,36 +390,25 @@ export default function ProductPage({ addToCart }) {
             heading="Similar Products"
           />
 
-          {/* 🟣 Recently Viewed Products */}
+          {/* 🟣 Recently Viewed */}
           {recentViews.length > 0 && (
-            <div style={{ marginTop: "40px" }}>
-              <h3>Recently Viewed Products</h3>
-              <div style={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
+            <div className="mt-10">
+              <h3 className="text-lg font-semibold mb-3">
+                Recently Viewed Products
+              </h3>
+              <div className="flex flex-wrap gap-4">
                 {recentViews.map((view) => (
                   <div
                     key={view.id}
-                    style={{
-                      border: "1px solid #ddd",
-                      borderRadius: "8px",
-                      padding: "10px",
-                      textAlign: "center",
-                      width: "150px",
-                      backgroundColor: "#f9f9f9",
-                    }}
+                    className="border border-gray-200 rounded p-3 text-center w-36 bg-gray-50"
                   >
                     <img
                       src={view.productInfo.thumbnail}
                       alt={view.productInfo.title}
-                      style={{
-                        width: "100%",
-                        height: "100px",
-                        objectFit: "contain",
-                      }}
+                      className="w-full h-24 object-contain"
                     />
-                    <p style={{ marginTop: "10px", fontSize: "14px" }}>
-                      {view.productInfo.title}
-                    </p>
-                    <p style={{ fontWeight: "bold", color: "#FFA41C" }}>
+                    <p className="mt-2 text-sm">{view.productInfo.title}</p>
+                    <p className="font-bold text-yellow-500">
                       ₹{view.productInfo.price}
                     </p>
                   </div>
@@ -431,79 +421,3 @@ export default function ProductPage({ addToCart }) {
     </div>
   );
 }
-
-const styles = {
-  page: {
-    display: "flex",
-    gap: "40px",
-    padding: "40px",
-    flexWrap: "wrap",
-    marginTop: "40px",
-    justifyContent: "center",
-  },
-  imageSection: {
-    maxWidth: "400px",
-  },
-  mainImg: {
-    width: "100%",
-    height: "auto",
-    borderRadius: "8px",
-  },
-  thumbnailContainer: {
-    display: "flex",
-    gap: "10px",
-    marginTop: "10px",
-    justifyContent: "center",
-    flexWrap: "wrap",
-  },
-  thumb: {
-    width: "60px",
-    height: "60px",
-    objectFit: "contain",
-    borderRadius: "4px",
-    cursor: "pointer",
-  },
-  info: {
-    maxWidth: "500px",
-  },
-  btn: {
-    backgroundColor: "#FFA41C",
-    padding: "10px 20px",
-    border: "none",
-    borderRadius: "4px",
-    color: "white",
-    cursor: "pointer",
-    marginTop: "10px",
-  },
-  textArea: {
-    width: "100%",
-    padding: "10px",
-    borderRadius: "6px",
-    border: "1px solid #ccc",
-    marginBottom: "10px",
-  },
-  reviewCard: {
-    background: "#222",
-    color: "#fff",
-    padding: "15px",
-    borderRadius: "8px",
-    marginBottom: "15px",
-  },
-  editBtn: {
-    backgroundColor: "#007bff",
-    color: "white",
-    border: "none",
-    padding: "6px 12px",
-    marginRight: "10px",
-    borderRadius: "4px",
-    cursor: "pointer",
-  },
-  delBtn: {
-    backgroundColor: "#dc3545",
-    color: "white",
-    border: "none",
-    padding: "6px 12px",
-    borderRadius: "4px",
-    cursor: "pointer",
-  },
-};

@@ -23,13 +23,17 @@ export default function CustomerOrders() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) return;
-      const q = query(collection(db, "orders"), where("userId", "==", user.uid));
+      const q = query(
+        collection(db, "orders"),
+        where("userId", "==", user.uid)
+      );
       const querySnapshot = await getDocs(q);
       const fetchedOrders = [];
 
       for (const docSnap of querySnapshot.docs) {
         const orderData = docSnap.data();
-        const orderId = orderData?.orderId || `order_fallback_${orderData.timestamp}`;
+        const orderId =
+          orderData?.orderId || `order_fallback_${orderData.timestamp}`;
         const trackingDoc = await getDoc(doc(db, "tracking", orderId));
 
         fetchedOrders.push(orderData);
@@ -132,158 +136,198 @@ export default function CustomerOrders() {
       {orders.length === 0 ? (
         <p>You haven’t placed any orders yet.</p>
       ) : (
-        orders.map((order, index) => {
-          const total = order.cart.reduce(
-            (sum, item) => sum + item.price * item.quantity,
-            0
-          );
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "25px",
+            width: "100%",
+            maxWidth: "800px",
+          }}
+        >
+          {orders.map((order, index) => {
+            const total = order.cart.reduce(
+              (sum, item) => sum + item.price * item.quantity,
+              0
+            );
 
-          const orderId = order?.orderId || `order_fallback_${order.timestamp}`;
-          const tracking = trackingStatuses[orderId] || {};
-          const statusMap = tracking.status || {};
-          const isDelivered = statusMap.delivered === true;
+            const orderId =
+              order?.orderId || `order_fallback_${order.timestamp}`;
+            const tracking = trackingStatuses[orderId] || {};
+            const statusMap = tracking.status || {};
+            const isDelivered = statusMap.delivered === true;
 
-          return (
-            <div
-              key={index}
-              style={{
-                border: "1px solid #333",
-                borderRadius: "8px",
-                padding: "20px",
-                marginBottom: "25px",
-                backgroundColor: "#1e1e1e",
-                maxWidth: "600px",
-                width: "100%",
-              }}
-            >
-              <h3>Order #{index + 1}</h3>
-              <p>
-                <strong>Placed on:</strong>{" "}
-                {new Date(order.timestamp).toLocaleString()}
-              </p>
-              <p>
-                <strong>Name:</strong> {order.name}
-              </p>
-              <p>
-                <strong>Address:</strong> {order.address}
-              </p>
-              <p>
-                <strong>Phone:</strong> {order.phone}
-              </p>
+            return (
+              <div
+                key={index}
+                style={{
+                  border: "1px solid #333",
+                  borderRadius: "8px",
+                  padding: "20px",
+                  backgroundColor: "#1e1e1e",
+                }}
+              >
+                <h3>Order #{index + 1}</h3>
+                <p>
+                  <strong>Placed on:</strong>{" "}
+                  {new Date(order.timestamp).toLocaleString()}
+                </p>
+                <p>
+                  <strong>Name:</strong> {order.name}
+                </p>
+                <p>
+                  <strong>Address:</strong> {order.address}
+                </p>
+                <p>
+                  <strong>Phone:</strong> {order.phone}
+                </p>
 
-              <p>
-                <strong>Status:</strong>
-              </p>
-              <ul style={{ paddingLeft: "20px" }}>
-                <li style={{ color: statusMap.ordered ? "lightgreen" : "#888" }}>✅ Ordered</li>
-                <li style={{ color: statusMap.shipped ? "lightgreen" : "#888" }}>🚚 Shipped</li>
-                <li style={{ color: statusMap.outForDelivery ? "lightgreen" : "#888" }}>📦 Out for Delivery</li>
-                <li style={{ color: statusMap.delivered ? "lightgreen" : "#888" }}>📬 Delivered</li>
-              </ul>
+                <p>
+                  <strong>Status:</strong>
+                </p>
+                <ul style={{ paddingLeft: "20px" }}>
+                  <li
+                    style={{ color: statusMap.ordered ? "lightgreen" : "#888" }}
+                  >
+                    ✅ Ordered
+                  </li>
+                  <li
+                    style={{ color: statusMap.shipped ? "lightgreen" : "#888" }}
+                  >
+                    🚚 Shipped
+                  </li>
+                  <li
+                    style={{
+                      color: statusMap.outForDelivery ? "lightgreen" : "#888",
+                    }}
+                  >
+                    📦 Out for Delivery
+                  </li>
+                  <li
+                    style={{
+                      color: statusMap.delivered ? "lightgreen" : "#888",
+                    }}
+                  >
+                    📬 Delivered
+                  </li>
+                </ul>
 
-              <h4 style={{ marginTop: "15px" }}>🛒 Products:</h4>
-              {order.cart.map((item, i) => (
+                <h4 style={{ marginTop: "15px", marginBottom:"10px" }}>🛒 Products:</h4>
+                {order.cart.map((item, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      display: "flex",
+                      gap: "10px",
+                      marginBottom: "10px",
+                      borderBottom: "1px solid #333",
+                      paddingBottom: "10px",
+                    }}
+                  >
+                    <img
+                      src={item.image}
+                      alt={item.title}
+                      style={{
+                        width: "60px",
+                        height: "60px",
+                        objectFit: "contain",
+                        border: "1px solid #555",
+                        padding: "5px",
+                        backgroundColor: "#fff",
+                        borderRadius: "4px",
+                      }}
+                    />
+                    <div>
+                      <p style={{ margin: 0 }}>{item.title}</p>
+                      <p style={{ margin: 0 }}>
+                        ₹ {item.price} × {item.quantity}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+
+                <h4 style={{ marginTop: "15px" }}>
+                  Total: ₹{total.toFixed(2)}
+                </h4>
+
                 <div
-                  key={i}
                   style={{
                     display: "flex",
                     gap: "10px",
-                    marginBottom: "10px",
-                    borderBottom: "1px solid #333",
-                    paddingBottom: "10px",
+                    marginTop: "10px",
+                    flexDirection: "column",
                   }}
                 >
-                  <img
-                    src={item.image}
-                    alt={item.title}
+                  <button
+                    onClick={() => handleCancel(index)}
                     style={{
-                      width: "60px",
-                      height: "60px",
-                      objectFit: "contain",
-                      border: "1px solid #555",
-                      padding: "5px",
-                      backgroundColor: "#fff",
-                      borderRadius: "4px",
+                      backgroundColor: "#ff4d4f",
+                      color: "#fff",
+                      border: "none",
+                      padding: "10px 15px",
+                      borderRadius: "5px",
+                      cursor: "pointer",
                     }}
-                  />
-                  <div>
-                    <p style={{ margin: 0 }}>{item.title}</p>
-                    <p style={{ margin: 0 }}>₹ {item.price} × {item.quantity}</p>
-                  </div>
+                  >
+                    Cancel Order
+                  </button>
+
+                  {isDelivered && (
+                    <>
+                      <textarea
+                        rows={3}
+                        placeholder="Reason for return..."
+                        style={{
+                          width: "100%",
+                          padding: "10px",
+                          borderRadius: "5px",
+                          border: "1px solid #ccc",
+                          fontSize: "14px",
+                          resize: "vertical",
+                          backgroundColor: "#f9f9f9",
+                          color: "#000",
+                        }}
+                        value={tracking.returnReason || ""}
+                        onChange={(e) => {
+                          const updated = { ...trackingStatuses };
+                          updated[orderId] = {
+                            ...updated[orderId],
+                            returnReason: e.target.value,
+                          };
+                          setTrackingStatuses(updated);
+                        }}
+                      ></textarea>
+
+                      <button
+                        onClick={() => {
+                          const reason =
+                            trackingStatuses[orderId]?.returnReason;
+                          if (!reason || reason.trim().length === 0) {
+                            toast.warning(
+                              "⚠️ Please enter a reason for return."
+                            );
+                            return;
+                          }
+                          handleReturnRequest(orderId, reason.trim());
+                        }}
+                        style={{
+                          backgroundColor: "#FFA41C",
+                          color: "#000",
+                          border: "none",
+                          padding: "10px 15px",
+                          borderRadius: "5px",
+                          cursor: "pointer",
+                        }}
+                      >
+                        Submit Return Request
+                      </button>
+                    </>
+                  )}
                 </div>
-              ))}
-
-              <h4 style={{ marginTop: "15px" }}>Total: ₹{total.toFixed(2)}</h4>
-
-              <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
-                <button
-                  onClick={() => handleCancel(index)}
-                  style={{
-                    backgroundColor: "#ff4d4f",
-                    color: "#fff",
-                    border: "none",
-                    padding: "10px 15px",
-                    borderRadius: "5px",
-                    cursor: "pointer",
-                  }}
-                >
-                  Cancel Order
-                </button>
-
-                {isDelivered && (
-                  <div style={{ width: "100%" }}>
-                    <textarea
-                      rows={3}
-                      placeholder="Reason for return..."
-                      style={{
-                        width: "100%",
-                        padding: "10px",
-                        marginTop: "10px",
-                        borderRadius: "5px",
-                        border: "1px solid #ccc",
-                        fontSize: "14px",
-                        resize: "vertical",
-                        backgroundColor: "#f9f9f9",
-                        color: "#000",
-                      }}
-                      value={tracking.returnReason || ""}
-                      onChange={(e) => {
-                        const updated = { ...trackingStatuses };
-                        updated[orderId] = {
-                          ...updated[orderId],
-                          returnReason: e.target.value,
-                        };
-                        setTrackingStatuses(updated);
-                      }}
-                    ></textarea>
-
-                    <button
-                      onClick={() => {
-                        const reason = trackingStatuses[orderId]?.returnReason;
-                        if (!reason || reason.trim().length === 0) {
-                          toast.warning("⚠️ Please enter a reason for return.");
-                          return;
-                        }
-                        handleReturnRequest(orderId, reason.trim());
-                      }}
-                      style={{
-                        backgroundColor: "#FFA41C",
-                        color: "#000",
-                        border: "none",
-                        padding: "10px 15px",
-                        borderRadius: "5px",
-                        cursor: "pointer",
-                        marginTop: "5px",
-                      }}
-                    >
-                      Submit Return Request
-                    </button>
-                  </div>
-                )}
               </div>
-            </div>
-          );
-        })
+            );
+          })}
+        </div>
       )}
     </div>
   );

@@ -6,45 +6,25 @@ export default function Filters({ filters, setFilters, darkMode }) {
     setFilters({ ...filters, [name]: value });
   };
 
-  const containerStyle = {
-    padding: "20px",
-    background: darkMode ? "#1f1f1f" : "#f4f4f4",
-    color: darkMode ? "#fff" : "#000",
-    borderRadius: "10px",
-    width: "260px",
-    minHeight: "500px",
-    boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
-  };
-
-  const labelStyle = {
-    display: "block",
-    marginBottom: "6px",
-    fontWeight: "bold",
-  };
-
-  const selectStyle = {
-    width: "100%",
-    padding: "8px",
-    borderRadius: "6px",
-    backgroundColor: darkMode ? "#333" : "#fff",
-    color: darkMode ? "#fff" : "#000",
-    border: "1px solid #ccc",
-    marginBottom: "15px",
-  };
-
-  const headingStyle = {
-    fontSize: "1.2rem",
-    marginBottom: "10px",
-    color: darkMode ? "#FFD700" : "#000",
-  };
-
   return (
-    <div style={containerStyle}>
-      <h3 style={headingStyle}>Filter Products</h3>
+    <div
+      className={`p-5 rounded-xl shadow-md w-[260px] min-h-[500px] ${
+        darkMode ? "bg-[#1f1f1f] text-white" : "bg-[#f4f4f4] text-black"
+      }`}
+    >
+      <h3
+        className={`text-xl font-semibold mb-4 ${
+          darkMode ? "text-yellow-400" : "text-black"
+        }`}
+      >
+        Filter Products
+      </h3>
 
       {/* Price Range */}
-      <div>
-        <label style={labelStyle}>Price Range: ₹{filters.maxPrice}</label>
+      <div className="mb-6">
+        <label className="block font-semibold mb-1">
+          Price Range: ₹{filters.maxPrice}
+        </label>
         <input
           type="range"
           name="maxPrice"
@@ -53,18 +33,22 @@ export default function Filters({ filters, setFilters, darkMode }) {
           step="500"
           value={filters.maxPrice}
           onChange={handleChange}
-          style={{ width: "100%", marginBottom: "20px" }}
+          className="w-full"
         />
       </div>
 
       {/* Category */}
-      <div>
-        <label style={labelStyle}>Category:</label>
+      <div className="mb-4">
+        <label className="block font-semibold mb-1">Category:</label>
         <select
           name="category"
           value={filters.category}
           onChange={handleChange}
-          style={selectStyle}
+          className={`w-full p-2 rounded-md border ${
+            darkMode
+              ? "bg-[#333] text-white border-gray-600"
+              : "bg-white border-gray-300"
+          }`}
         >
           <option value="all">All</option>
           <option value="smartphones">Smartphones</option>
@@ -77,13 +61,17 @@ export default function Filters({ filters, setFilters, darkMode }) {
       </div>
 
       {/* Brand */}
-      <div>
-        <label style={labelStyle}>Brand:</label>
+      <div className="mb-4">
+        <label className="block font-semibold mb-1">Brand:</label>
         <select
           name="brand"
           value={filters.brand}
           onChange={handleChange}
-          style={selectStyle}
+          className={`w-full p-2 rounded-md border ${
+            darkMode
+              ? "bg-[#333] text-white border-gray-600"
+              : "bg-white border-gray-300"
+          }`}
         >
           <option value="all">All</option>
           <option value="Apple">Apple</option>
@@ -96,13 +84,17 @@ export default function Filters({ filters, setFilters, darkMode }) {
       </div>
 
       {/* Rating */}
-      <div>
-        <label style={labelStyle}>Minimum Rating:</label>
+      <div className="mb-4">
+        <label className="block font-semibold mb-1">Minimum Rating:</label>
         <select
           name="minRating"
           value={filters.minRating}
           onChange={handleChange}
-          style={selectStyle}
+          className={`w-full p-2 rounded-md border ${
+            darkMode
+              ? "bg-[#333] text-white border-gray-600"
+              : "bg-white border-gray-300"
+          }`}
         >
           <option value="0">All Ratings</option>
           <option value="3">3★ & above</option>
@@ -111,13 +103,23 @@ export default function Filters({ filters, setFilters, darkMode }) {
         </select>
       </div>
 
-      {/* Sort */}
-      <h3 style={{ ...headingStyle, marginTop: "20px" }}>Sort By</h3>
+      {/* Sort By */}
+      <h3
+        className={`text-lg font-semibold mt-6 mb-2 ${
+          darkMode ? "text-yellow-400" : "text-black"
+        }`}
+      >
+        Sort By
+      </h3>
       <select
         name="sortBy"
         value={filters.sortBy}
         onChange={handleChange}
-        style={selectStyle}
+        className={`w-full p-2 rounded-md border ${
+          darkMode
+            ? "bg-[#333] text-white border-gray-600"
+            : "bg-white border-gray-300"
+        }`}
       >
         <option value="default">Default</option>
         <option value="priceLowHigh">Price: Low to High</option>

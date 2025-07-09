@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import { Heart, HeartPlus } from "lucide-react";
-import "./ProductCardStyle.css";
 
 export default function ProductCard({
   product,
@@ -14,95 +13,37 @@ export default function ProductCard({
   const price = product.price !== undefined ? product.price : "N/A";
 
   return (
-    <div className="product-card" style={styles.card}>
+    <div className="border border-gray-200 rounded-lg p-4 w-[250px] text-center m-2 shadow hover:shadow-lg hover:scale-105 transition-transform duration-300 bg-white">
       <img
-        className="thumbnail"
         src={imageSrc}
         alt={title}
-        style={styles.image}
+        className="h-[150px] w-full object-contain mb-3"
       />
-      <h3>{title}</h3>
-      <p>₹ {price}</p>
+      <h3 className="font-medium text-lg mb-1">{title}</h3>
+      <p className="text-gray-800 font-semibold mb-3">₹ {price}</p>
 
-      {/* 🛒 Add to Cart with Tooltip */}
-      <div className="tooltip-wrapper">
-        <button
-          className="cart"
-          onClick={() => addToCart(product)}
-          style={styles.btn}
-        >
-          Add to Cart
+      {/* 🛒 Add to Cart */}
+      <button
+        onClick={() => addToCart(product)}
+        className="bg-yellow-500 text-black px-4 py-2 rounded hover:opacity-90 font-semibold w-full mb-2"
+      >
+        Add to Cart
+      </button>
+
+      {/* ❤️ Wishlist Button */}
+      <button
+        onClick={() => toggleFavorite(product)}
+        className="text-red-500 hover:scale-110 transition mb-2"
+      >
+        {isFavorite ? <Heart size={20} fill="red" /> : <HeartPlus size={20} />}
+      </button>
+
+      {/* 🔍 View Details Button */}
+      <Link to={`/product/${product.id}`}>
+        <button className="bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-900 transition w-full mt-2">
+          View Details
         </button>
-        <span className="tooltip-text">Add to Cart</span>
-      </div>
-
-      {/* ❤️ Wishlist Button with Tooltip */}
-      <div className="tooltip-wrapper">
-        <button onClick={() => toggleFavorite(product)} style={styles.heart}>
-          {isFavorite ? (
-            <Heart color="red" size={20} fill="red" />
-          ) : (
-            <HeartPlus color="#444" size={20} />
-          )}
-        </button>
-        <span className="tooltip-text">
-          {isFavorite ? "Remove from Wishlist" : "Add to Wishlist"}
-        </span>
-      </div>
-
-      {/* 🔍 View Details Button with Tooltip */}
-      <div className="tooltip-wrapper">
-        <Link to={`/product/${product.id}`}>
-          <button className="view" style={styles.viewBtn}>
-            View Details
-          </button>
-        </Link>
-        <span className="tooltip-text">View Details</span>
-      </div>
+      </Link>
     </div>
   );
 }
-
-const styles = {
-  card: {
-    border: "1px solid #ddd",
-    padding: "16px",
-    borderRadius: "8px",
-    textAlign: "center",
-    width: "250px",
-    margin: "10px",
-    transition: "transform 0.3s ease, box-shadow 0.3s ease",
-    cursor: "pointer",
-  },
-  image: {
-    height: "150px",
-    objectFit: "contain",
-    width: "100%",
-    marginBottom: "10px",
-  },
-  btn: {
-    backgroundColor: "#FFA41C",
-    border: "none",
-    padding: "8px 12px",
-    borderRadius: "4px",
-    color: "white",
-    marginBottom: "8px",
-    cursor: "pointer",
-  },
-  viewBtn: {
-    backgroundColor: "#232F3E",
-    color: "white",
-    border: "none",
-    padding: "8px 12px",
-    borderRadius: "4px",
-    cursor: "pointer",
-  },
-  heart: {
-    margin: "5px",
-    background: "none",
-    border: "none",
-    fontSize: "20px",
-    cursor: "pointer",
-    color: "red",
-  },
-};

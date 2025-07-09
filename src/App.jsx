@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react";
 import { Routes, Route } from "react-router-dom";
+import { onAuthStateChanged } from "firebase/auth";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { auth, db } from "./firebase";
 import Navbar from "./components/Navbar";
 import CategoryNavbar from "./components/CategoryNavbar";
 import Home from "./pages/Home";
@@ -9,63 +12,78 @@ import AccountPage from "./pages/AccountPage";
 import CheckoutPage from "./pages/CheckoutPage";
 import WishlistPage from "./pages/WishlistPage";
 import AdminApp from "./admin/AdminApp";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import Language from "./pages/Language";
 import CustomerOrders from "./pages/CustomerOrders";
-import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "./firebase";
 import LoginForm from "./pages/LoginForm";
 import SignupForm from "./pages/SignupForm";
-import ProfilePage from "./pages/ProfilePage"; // ✅ Profile page route
-<Route path="/address" element={<AddressPage />} />;
+import ProfilePage from "./pages/ProfilePage";
 import AddressPage from "./pages/AddressPage";
-
-
+import PrivateRoute from "./components/PrivateRoute";
+import Loading from "./components/Loading";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export default function App() {
-  const [cart, setCart] = useState(() => {
-    const storedCart = localStorage.getItem("cart");
-    try {
-      return storedCart ? JSON.parse(storedCart) : [];
-    } catch (err) {
-      console.error("Invalid cart JSON in localStorage", err);
-      localStorage.removeItem("cart");
-      return [];
-    }
-  });
-
-  const [wishlist, setWishlist] = useState(() => {
-    const stored = localStorage.getItem("wishlist");
-    try {
-      return stored ? JSON.parse(stored) : [];
-    } catch (err) {
-      console.error("Invalid wishlist JSON in localStorage", err);
-      localStorage.removeItem("wishlist");
-      return [];
-    }
-  });
-
+  const [cart, setCart] = useState([]);
+  const [wishlist, setWishlist] = useState([]);
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [darkMode, setDarkMode] = useState(false);
-  const [user, setUser] = useState(null);
   const [allProducts, setAllProducts] = useState([]);
+  const [cartInitialized, setCartInitialized] = useState(false);
+  const [wishlistInitialized, setWishlistInitialized] = useState(false);
 
   useEffect(() => {
-    localStorage.setItem("cart", JSON.stringify(cart));
-  }, [cart]);
-
-  useEffect(() => {
-    localStorage.setItem("wishlist", JSON.stringify(wishlist));
-  }, [wishlist]);
-
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
+      setAuthLoading(false);
+
+      if (firebaseUser) {
+        const uid = firebaseUser.uid;
+
+        const cartRef = doc(db, "carts", uid);
+        const cartSnap = await getDoc(cartRef);
+        if (cartSnap.exists()) {
+          setCart(cartSnap.data().items || []);
+        } else {
+          await setDoc(cartRef, { items: [] });
+        }
+        setCartInitialized(true);
+
+        const wishRef = doc(db, "wishlists", uid);
+        const wishSnap = await getDoc(wishRef);
+        if (wishSnap.exists()) {
+          setWishlist(wishSnap.data().items || []);
+        } else {
+          await setDoc(wishRef, { items: [] });
+        }
+        setWishlistInitialized(true);
+      } else {
+        setCart([]);
+        setWishlist([]);
+        setCartInitialized(false);
+        setWishlistInitialized(false);
+      }
     });
-    return () => unsub();
+
+    return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (user && cartInitialized) {
+      const cartRef = doc(db, "carts", user.uid);
+      setDoc(cartRef, { items: cart });
+    }
+  }, [cart, user, cartInitialized]);
+
+  useEffect(() => {
+    if (user && wishlistInitialized) {
+      const wishRef = doc(db, "wishlists", user.uid);
+      setDoc(wishRef, { items: wishlist });
+    }
+  }, [wishlist, user, wishlistInitialized]);
 
   useEffect(() => {
     fetch("https://fakestoreapi.com/products")
@@ -74,25 +92,11 @@ export default function App() {
       .catch((err) => console.error("Error fetching products:", err));
   }, []);
 
-  const toggleFavorite = (product) => {
-    const exists = wishlist.find((item) => item.id === product.id);
-    if (exists) {
-      const updated = wishlist.filter((item) => item.id !== product.id);
-      setWishlist(updated);
-      toast.info("💔 Removed from wishlist");
-    } else {
-      const updated = [...wishlist, product];
-      setWishlist(updated);
-      toast.success("💖 Added to wishlist");
-    }
-  };
-
   const addToCart = (product) => {
     const updatedProduct = {
       ...product,
       image: product.image || product.thumbnail,
     };
-
     const exists = cart.find((item) => item.id === updatedProduct.id);
     if (exists) {
       setCart(
@@ -130,6 +134,19 @@ export default function App() {
       )
     );
 
+  const toggleFavorite = (product) => {
+    const exists = wishlist.find((item) => item.id === product.id);
+    if (exists) {
+      setWishlist(wishlist.filter((item) => item.id !== product.id));
+      toast.info("💔 Removed from wishlist");
+    } else {
+      setWishlist([...wishlist, product]);
+      toast.success("💖 Added to wishlist");
+    }
+  };
+
+  if (authLoading) return <Loading />;
+
   return (
     <div
       style={{
@@ -155,83 +172,128 @@ export default function App() {
       />
 
       <Routes>
+        {/* Public Routes */}
+        <Route path="/login" element={<LoginForm />} />
+        <Route path="/signup" element={<SignupForm />} />
+
+        {/* Protected Routes */}
         <Route
           path="/"
           element={
-            <Home
-              addToCart={addToCart}
-              searchTerm={searchTerm}
-              selectedCategory={selectedCategory}
-              darkMode={darkMode}
-              wishlist={wishlist}
-              toggleFavorite={toggleFavorite}
-            />
+            <PrivateRoute user={user}>
+              <Home
+                addToCart={addToCart}
+                searchTerm={searchTerm}
+                selectedCategory={selectedCategory}
+                darkMode={darkMode}
+                wishlist={wishlist}
+                toggleFavorite={toggleFavorite}
+              />
+            </PrivateRoute>
           }
         />
         <Route
           path="/product/:id"
           element={
-            <ProductPage
-              addToCart={addToCart}
-              toggleWishlist={toggleFavorite}
-              wishlist={wishlist}
-            />
+            <PrivateRoute user={user}>
+              <ProductPage
+                addToCart={addToCart}
+                toggleWishlist={toggleFavorite}
+                wishlist={wishlist}
+              />
+            </PrivateRoute>
           }
         />
         <Route
           path="/cart"
           element={
-            <CartPage
-              cartItems={cart}
-              onRemove={removeFromCart}
-              onIncrease={increaseQuantity}
-              onDecrease={decreaseQuantity}
-              onAddToCart={addToCart}
-              toggleWishlist={toggleFavorite}
-              wishlist={wishlist}
-              darkMode={darkMode}
-              allProducts={allProducts}
-            />
+            <PrivateRoute user={user}>
+              <CartPage
+                cartItems={cart}
+                onRemove={removeFromCart}
+                onIncrease={increaseQuantity}
+                onDecrease={decreaseQuantity}
+                onAddToCart={addToCart}
+                toggleWishlist={toggleFavorite}
+                wishlist={wishlist}
+                darkMode={darkMode}
+                allProducts={allProducts}
+              />
+            </PrivateRoute>
           }
         />
-        <Route path="/account" element={<AccountPage />} />
+        <Route
+          path="/account"
+          element={
+            <PrivateRoute user={user}>
+              <AccountPage />
+            </PrivateRoute>
+          }
+        />
         <Route
           path="/checkout"
-          element={<CheckoutPage cartItems={cart} setCartItems={setCart} />}
+          element={
+            <PrivateRoute user={user}>
+              <CheckoutPage cartItems={cart} setCartItems={setCart} />
+            </PrivateRoute>
+          }
         />
-        <Route path="/admin/*" element={<AdminApp />} />
-        <Route path="/language" element={<Language />} />
-        <Route path="/orders" element={<CustomerOrders />} />
-        <Route path="/login" element={<LoginForm />} />
-        <Route path="/signup" element={<SignupForm />} />
-        <Route path="/address" element={<AddressPage />} />
-
         <Route
           path="/wishlist"
           element={
-            <WishlistPage
-              wishlist={wishlist}
-              addToCart={addToCart}
-              toggleFavorite={toggleFavorite}
-              darkMode={darkMode}
-            />
+            <PrivateRoute user={user}>
+              <WishlistPage
+                wishlist={wishlist}
+                addToCart={addToCart}
+                toggleFavorite={toggleFavorite}
+                darkMode={darkMode}
+              />
+            </PrivateRoute>
           }
         />
-
-        {/* ✅✅✅ Profile route added here */}
-        <Route path="/profile" element={<ProfilePage />} />
+        <Route
+          path="/orders"
+          element={
+            <PrivateRoute user={user}>
+              <CustomerOrders />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <PrivateRoute user={user}>
+              <ProfilePage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/address"
+          element={
+            <PrivateRoute user={user}>
+              <AddressPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/admin/*"
+          element={
+            <PrivateRoute user={user}>
+              <AdminApp />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/language"
+          element={
+            <PrivateRoute user={user}>
+              <Language />
+            </PrivateRoute>
+          }
+        />
       </Routes>
 
-      <ToastContainer
-        position="top-center"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        pauseOnHover
-        draggable
-        theme="dark"
-      />
+      <ToastContainer position="top-center" autoClose={3000} theme="dark" />
     </div>
   );
 }

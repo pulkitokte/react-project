@@ -13,119 +13,71 @@ export default function Cart({
     0
   );
 
+  if (cartItems.length === 0) {
+    return (
+      <p className="text-center text-lg mt-10">
+        Cart is empty.{" "}
+        <Link to="/" className="text-blue-600 underline">
+          Go shopping →
+        </Link>
+      </p>
+    );
+  }
+
   return (
-    <div>
-      {/* ❌ Removed duplicated <h1> title */}
+    <div className="w-full">
+      {cartItems.map((item) => (
+        <div
+          key={item.id}
+          className={`flex items-center gap-6 mb-6 p-4 rounded-lg shadow-md ${
+            darkMode ? "bg-zinc-800 text-white" : "bg-gray-100 text-black"
+          }`}
+        >
+          <img
+            src={item.thumbnail || item.image || item.images?.[0]}
+            alt={item.title}
+            className="w-24 h-24 object-contain border border-gray-300 p-2 rounded bg-white"
+          />
+          <div className="flex-1">
+            <h2 className="text-lg font-semibold mb-1">{item.title}</h2>
+            <p className="text-sm">Price: ₹{item.price.toFixed(2)}</p>
+            <p className="text-sm">Quantity: {item.quantity}</p>
 
-      {cartItems.length === 0 ? (
-        <p style={{ textAlign: "center", fontSize: "18px" }}>Cart is empty.</p>
-      ) : (
-        <div>
-          {cartItems.map((item) => (
-            <div
-              key={item.id}
-              style={{
-                ...styles.cartItem,
-                backgroundColor: darkMode ? "#1f1f1f" : "#f9f9f9",
-                color: darkMode ? "#fff" : "#000",
-              }}
-            >
-              <img
-                src={item.thumbnail || item.image || item.images?.[0]}
-                alt={item.title}
-                style={styles.img}
-              />
-              <div>
-                <h2>{item.title}</h2>
-                <p>Price: ₹{item.price}</p>
-                <p>Quantity: {item.quantity}</p>
-                <div style={{ display: "flex", gap: "10px", margin: "10px 0" }}>
-                  <button
-                    onClick={() => onIncrease(item.id)}
-                    style={styles.btn}
-                  >
-                    <Plus size={16} />
-                  </button>
-                  <button
-                    onClick={() => onDecrease(item.id)}
-                    style={styles.btn}
-                  >
-                    <Minus size={16} />
-                  </button>
-                  <button
-                    onClick={() => onRemove(item.id)}
-                    style={styles.remBtn}
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              </div>
+            <div className="flex gap-3 mt-3">
+              <button
+                onClick={() => onIncrease(item.id)}
+                className="px-2 py-1 border rounded hover:bg-gray-200 dark:hover:bg-zinc-700"
+              >
+                <Plus size={16} />
+              </button>
+              <button
+                onClick={() => onDecrease(item.id)}
+                className="px-2 py-1 border rounded hover:bg-gray-200 dark:hover:bg-zinc-700"
+              >
+                <Minus size={16} />
+              </button>
+              <button
+                onClick={() => onRemove(item.id)}
+                className="px-2 py-1 border border-red-500 rounded text-red-600 bg-red-100 hover:bg-red-200"
+              >
+                <Trash2 size={16} />
+              </button>
             </div>
-          ))}
-
-          <h2 style={styles.total}>Total: ₹{total.toFixed(2)}</h2>
-          <Link to="/checkout" style={styles.proceed}>
-            <button
-              style={{
-                marginTop: "20px",
-                padding: "10px",
-                backgroundColor: "#28a745",
-                color: "white",
-                border: "none",
-                borderRadius: "4px",
-                cursor: "pointer",
-              }}
-            >
-              Proceed to Checkout
-            </button>
-          </Link>
+          </div>
         </div>
-      )}
+      ))}
+
+      <h2 className="text-right text-xl font-bold mt-8 mr-4">
+        Total: ₹{total.toFixed(2)}
+      </h2>
+
+      <div className="flex justify-center mt-6">
+        <Link to="/checkout">
+          <button className="bg-[#28a745] text-white px-3 py-1.5 rounded hover:bg-green-800 transition duration-200">
+            Proceed to Checkout
+          </button>
+        </Link>
+      </div>
     </div>
   );
 }
-
-const styles = {
-  cartItem: {
-    display: "flex",
-    alignItems: "center",
-    gap: "20px",
-    marginBottom: "20px",
-    padding: "15px",
-    borderRadius: "8px",
-    boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
-  },
-  img: {
-    width: "100px",
-    height: "100px",
-    objectFit: "contain",
-    border: "1px solid #ccc",
-    padding: "5px",
-    borderRadius: "5px",
-    backgroundColor: "#fff",
-  },
-  btn: {
-    padding: "8px 10px",
-    border: "1px solid #ccc",
-    borderRadius: "5px",
-    backgroundColor: "#eee",
-    cursor: "pointer",
-  },
-  remBtn: {
-    padding: "8px 10px",
-    border: "1px solid red",
-    borderRadius: "5px",
-    backgroundColor: "#ffdddd",
-    cursor: "pointer",
-    color: "red",
-  },
-  total: {
-    textAlign: "right",
-    fontSize: "24px",
-    marginRight: "30px",
-  },
-  proceed: {
-    display: "flex",
-    justifyContent: "center",
-  },
-};

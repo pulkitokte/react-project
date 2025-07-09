@@ -32,97 +32,45 @@ export default function LoginForm() {
   };
 
   return (
-    <form onSubmit={handleLogin} style={styles.form}>
-      <h2 style={styles.login}>Login</h2>
+    <form
+      onSubmit={handleLogin}
+      className="max-w-md mx-auto mt-10 p-6 bg-white shadow-md rounded-lg space-y-4"
+    >
+      <h2 className="text-2xl font-bold text-center text-gray-800">Login</h2>
 
       <input
-        style={styles.email}
         type="email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         placeholder="Email"
         required
+        className="w-full px-4 py-2 border rounded focus:outline-none focus:ring focus:border-blue-400"
       />
 
-      <div style={styles.passwordField}>
+      <div className="relative">
         <input
-          style={styles.pswd}
           type={showPassword ? "text" : "password"}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Password"
           required
+          className="w-full px-4 py-2 border rounded focus:outline-none"
         />
         <button
           type="button"
           onClick={() => setShowPassword((prev) => !prev)}
-          style={styles.toggle}
+          className="absolute right-3 top-2.5 text-gray-500"
         >
           {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
         </button>
       </div>
 
-      <button type="submit" style={styles.btn}>
+      <button
+        type="submit"
+        className="w-full py-2 bg-yellow-400 text-black font-bold rounded hover:bg-yellow-500 transition duration-200"
+      >
         Login
       </button>
     </form>
   );
 }
-
-const styles = {
-  form: {
-    display: "flex",
-    flexDirection: "column",
-    maxWidth: "400px",
-    margin: "40px auto",
-    padding: "20px",
-    borderRadius: "8px",
-    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
-    backgroundColor: "#fff",
-  },
-  login: {
-    margin: "10px 0",
-    textAlign: "center",
-    color: "#333",
-  },
-  email: {
-    padding: "10px",
-    margin: "10px",
-    border: "1px solid #ccc",
-    borderRadius: "5px",
-    outline: "none",
-    width: "100%",
-  },
-  passwordField: {
-    position: "relative",
-    display: "flex",
-    alignItems: "center",
-    width:"110%",
-  },
-  pswd: {
-    padding: "10px",
-    margin: "10px",
-    border: "1px solid #ccc",
-    borderRadius: "5px",
-    outline: "none",
-    width: "100%",
-  },
-  toggle: {
-    position: "absolute",
-    right: "20px",
-    background: "none",
-    border: "none",
-    cursor: "pointer",
-  },
-  btn: {
-    margin: "20px auto 0",
-    padding: "10px 20px",
-    width: "50%",
-    borderRadius: "5px",
-    border: "none",
-    backgroundColor: "#febd69",
-    color: "#000",
-    fontWeight: "bold",
-    cursor: "pointer",
-  },
-};

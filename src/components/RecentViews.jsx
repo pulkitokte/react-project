@@ -42,7 +42,7 @@ export default function RecentViews({ addToCart, toggleFavorite, wishlist }) {
           try {
             setRecent(JSON.parse(local));
           } catch (err) {
-            console.error("Invalid localStorage data for recentViews",err);
+            console.error("Invalid localStorage data for recentViews", err);
           }
         }
       }
@@ -54,16 +54,11 @@ export default function RecentViews({ addToCart, toggleFavorite, wishlist }) {
   if (recent.length === 0) return null;
 
   return (
-    <div style={{ padding: "20px", marginTop: "40px" }}>
-      <h2>👀 Recently Viewed Products</h2>
-      <div
-        style={{
-          display: "flex",
-          gap: "20px",
-          flexWrap: "wrap",
-          justifyContent: "center",
-        }}
-      >
+    <div className="px-5 mt-10">
+      <h2 className="text-2xl font-semibold mb-6 text-center">
+        👀 Recently Viewed Products
+      </h2>
+      <div className="flex flex-wrap justify-center gap-6">
         {recent.map((product) => (
           <ProductCard
             key={product.id}
