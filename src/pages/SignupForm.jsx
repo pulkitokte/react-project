@@ -22,6 +22,7 @@ export default function SignupForm() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [address, setAddress] = useState("");
+  const [pincode, setPincode] = useState(""); // ✅ new state
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showPolicy, setShowPolicy] = useState(false);
@@ -96,6 +97,11 @@ export default function SignupForm() {
       return;
     }
 
+    if (!/^\d{6}$/.test(pincode)) {
+      toast.error("❌ Please enter a valid 6-digit pincode.");
+      return;
+    }
+
     try {
       const userCredential = await createUserWithEmailAndPassword(
         auth,
@@ -117,12 +123,14 @@ export default function SignupForm() {
         gender,
         age,
         dob,
+        pincode, // ✅ store pincode in user profile
       });
 
       if (address.trim()) {
         await addDoc(collection(db, "users", user.uid, "addresses"), {
           name,
           address,
+          pincode, // ✅ store pincode in address too
           phone,
           countryCode,
           label: "Home",
@@ -134,6 +142,7 @@ export default function SignupForm() {
       localStorage.removeItem("cart");
       localStorage.removeItem("userAddress");
       localStorage.removeItem("orders");
+      localStorage.setItem("pincode", pincode); // ✅ Add this line
 
       toast.success("✅ Sign up successful!");
       setTimeout(() => navigate("/login"), 3000);
@@ -216,9 +225,20 @@ export default function SignupForm() {
 
       <input
         type="text"
-        placeholder="Address (optional)"
         value={address}
         onChange={(e) => setAddress(e.target.value)}
+        placeholder="Address (optional)"
+        className="w-full px-4 py-2 border rounded focus:outline-none"
+      />
+
+      {/* ✅ Pincode */}
+      <input
+        type="text"
+        value={pincode}
+        onChange={(e) => setPincode(e.target.value)}
+        placeholder="Pincode"
+        maxLength={6}
+        required
         className="w-full px-4 py-2 border rounded focus:outline-none"
       />
 

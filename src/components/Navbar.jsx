@@ -57,7 +57,7 @@ export default function Navbar({
       className={`fixed top-0 left-0 right-0 z-50 w-full px-6 py-4 flex items-center justify-between ${
         darkMode ? "bg-[#121212] text-white" : "bg-black text-white"
       }`}
-      style={{ height: "100px" }} 
+      style={{ height: "100px" }}
     >
       {/* Logo */}
       <button
@@ -81,7 +81,7 @@ export default function Navbar({
               setSearchTerm(e.target.value);
               setShowSuggestions(true);
             }}
-            placeholder={t.searchPlaceholder}
+            placeholder={t?.searchPlaceholder || "Search..."}
             className="w-full px-4 py-2 text-black rounded-l-md focus:outline-none"
           />
           <button

@@ -6,6 +6,8 @@ import Loading from "../components/Loading";
 import Cart from "../components/Cart";
 import BackButton from "../components/BackButton";
 import RecommendedProducts from "../components/RecommendedProducts";
+import { useLanguage } from "../context/LanguageContext";
+import { translations } from "../utils/lang";
 
 export default function CartPage({
   darkMode,
@@ -20,6 +22,9 @@ export default function CartPage({
   const [user, loadingAuth] = useAuthState(auth);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [allProducts, setAllProducts] = useState([]);
+
+  const { language } = useLanguage();
+  const t = translations[language];
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -53,7 +58,9 @@ export default function CartPage({
 
         {user ? (
           <>
-            <h1 className="text-center text-3xl font-semibold mb-6">🛒 Your Cart</h1>
+            <h1 className="text-center text-3xl font-semibold mb-6">
+              🛒 {t.yourCart}
+            </h1>
 
             <div className="w-full">
               <Cart
@@ -70,7 +77,7 @@ export default function CartPage({
                 <RecommendedProducts
                   currentProductId={lastItem.id}
                   category={lastItemCategory}
-                  heading="Customers Also Bought"
+                  heading={t.customersAlsoBought}
                   onAddToCart={onAddToCart}
                   onToggleWishlist={toggleWishlist}
                   wishlistItems={wishlist}
@@ -80,7 +87,7 @@ export default function CartPage({
             )}
           </>
         ) : (
-          <h2 className="mt-10 text-xl">🚫 Please log in to view your cart.</h2>
+          <h2 className="mt-10 text-xl">🚫 {t.pleaseLoginToViewCart}</h2>
         )}
       </div>
     </div>

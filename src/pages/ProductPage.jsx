@@ -1,4 +1,3 @@
-// same imports
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import axios from "axios";
@@ -22,6 +21,8 @@ import {
   limit,
 } from "firebase/firestore";
 import { format } from "date-fns";
+import { useLanguage } from "../context/LanguageContext";
+import { translations } from "../utils/lang";
 
 const db = getFirestore();
 
@@ -38,6 +39,9 @@ export default function ProductPage({ addToCart }) {
   const [newAnswer, setNewAnswer] = useState({});
   const [recentViews, setRecentViews] = useState([]);
   const user = auth.currentUser;
+
+  const { language } = useLanguage();
+  const t = translations[language];
 
   useEffect(() => {
     axios.get(`https://dummyjson.com/products/${id}`).then((res) => {
@@ -194,7 +198,7 @@ export default function ProductPage({ addToCart }) {
         ).toFixed(1)
       : null;
 
-  if (!product) return <p className="text-center mt-10">Loading...</p>;
+  if (!product) return <p className="text-center mt-10">{t.loading}</p>;
 
   return (
     <div className="flex flex-wrap justify-center gap-10 p-10 mt-10">
@@ -202,7 +206,6 @@ export default function ProductPage({ addToCart }) {
         <BackButton />
       </div>
 
-      {/* 🖼️ Image Section */}
       <div className="max-w-md">
         <Zoom>
           <img src={mainImage} alt={product.title} className="rounded-lg" />
@@ -222,15 +225,14 @@ export default function ProductPage({ addToCart }) {
         </div>
       </div>
 
-      {/* 📦 Product Info */}
       <div className="max-w-lg space-y-4">
         <h2 className="text-2xl font-bold">{product.title}</h2>
         <p>{product.description}</p>
         <p className="text-sm text-gray-500">
-          <strong>Brand:</strong> {product.brand}
+          <strong>{t.brand}:</strong> {product.brand}
         </p>
         <p className="text-sm text-gray-500">
-          <strong>Category:</strong> {product.category}
+          <strong>{t.category}:</strong> {product.category}
         </p>
         <h3 className="text-xl font-semibold text-yellow-500">
           ₹{product.price}
@@ -239,20 +241,19 @@ export default function ProductPage({ addToCart }) {
           onClick={() => addToCart({ ...product, image: product.thumbnail })}
           className="bg-yellow-500 text-white py-2 px-4 rounded mt-2"
         >
-          Add to Cart
+          {t.addToCart}
         </button>
 
-        {/* ⭐ Reviews */}
         <div className="mt-10">
-          <h3 className="text-lg font-semibold mb-2">Customer Reviews</h3>
+          <h3 className="text-lg font-semibold mb-2">{t.customerReviews}</h3>
           {averageRating && (
             <p className="mb-2 text-sm text-yellow-500">
-              ⭐ {averageRating} / 5 ({reviews.length} reviews)
+              ⭐ {averageRating} / 5 ({reviews.length})
             </p>
           )}
           {user && (
             <div>
-              <label className="block mb-2">Rating:</label>
+              <label className="block mb-2">{t.rating}:</label>
               {[1, 2, 3, 4, 5].map((star) => (
                 <span
                   key={star}
@@ -266,7 +267,7 @@ export default function ProductPage({ addToCart }) {
               ))}
               <textarea
                 rows="3"
-                placeholder="Write your review..."
+                placeholder={t.writeReview}
                 value={newReview}
                 onChange={(e) => setNewReview(e.target.value)}
                 className="w-full p-3 border border-gray-300 rounded mt-3 mb-2"
@@ -275,7 +276,7 @@ export default function ProductPage({ addToCart }) {
                 onClick={handleSubmitReview}
                 className="bg-yellow-500 text-white px-4 py-2 rounded"
               >
-                {editId ? "Update Review" : "Submit Review"}
+                {editId ? t.updateReview : t.submitReview}
               </button>
             </div>
           )}
@@ -283,7 +284,7 @@ export default function ProductPage({ addToCart }) {
           <hr className="my-5" />
 
           {reviews.length === 0 ? (
-            <p>No reviews yet.</p>
+            <p>{t.noReviews}</p>
           ) : (
             reviews.map((rev) => (
               <div
@@ -294,7 +295,7 @@ export default function ProductPage({ addToCart }) {
                   <strong>• </strong>
                   {rev.date?.seconds
                     ? format(new Date(rev.date.seconds * 1000), "PPP")
-                    : "Just now"}
+                    : t.justNow}
                 </p>
                 <p className="text-yellow-400">
                   {"★".repeat(rev.rating)} ({rev.rating}/5)
@@ -307,13 +308,13 @@ export default function ProductPage({ addToCart }) {
                       onClick={() => handleEditReview(rev)}
                       className="bg-blue-500 text-white px-3 py-1 rounded mr-2"
                     >
-                      Edit
+                      {t.edit}
                     </button>
                     <button
                       onClick={() => handleDeleteReview(rev.id)}
                       className="bg-red-600 text-white px-3 py-1 rounded"
                     >
-                      Delete
+                      {t.delete}
                     </button>
                   </div>
                 )}
@@ -321,16 +322,15 @@ export default function ProductPage({ addToCart }) {
             ))
           )}
 
-          {/* 🟠 Q&A */}
           <div className="mt-10">
             <h3 className="text-lg font-semibold mb-2">
-              Product Questions & Answers
+              {t.questionsAndAnswers}
             </h3>
             {user && (
               <div className="mb-5">
                 <textarea
                   rows="2"
-                  placeholder="Ask a question..."
+                  placeholder={t.askPlaceholder}
                   value={newQuestion}
                   onChange={(e) => setNewQuestion(e.target.value)}
                   className="w-full p-3 border border-gray-300 rounded mb-2"
@@ -339,7 +339,7 @@ export default function ProductPage({ addToCart }) {
                   onClick={handleAskQuestion}
                   className="bg-yellow-500 text-white px-4 py-2 rounded"
                 >
-                  Ask
+                  {t.askQuestion}
                 </button>
               </div>
             )}
@@ -349,18 +349,18 @@ export default function ProductPage({ addToCart }) {
                 className="bg-gray-800 text-white p-4 rounded mb-3"
               >
                 <p>
-                  <strong>Q:</strong> {q.question}
+                  <strong>{t.question}</strong> {q.question}
                 </p>
                 {q.answer ? (
                   <p>
-                    <strong>A:</strong> {q.answer}
+                    <strong>{t.answerLabel}</strong> {q.answer}
                   </p>
                 ) : (
                   user && (
                     <div className="mt-2">
                       <input
                         type="text"
-                        placeholder="Write an answer..."
+                        placeholder={t.answerPlaceholder}
                         value={newAnswer[q.id] || ""}
                         onChange={(e) =>
                           setNewAnswer((prev) => ({
@@ -374,7 +374,7 @@ export default function ProductPage({ addToCart }) {
                         onClick={() => handleAnswerQuestion(q.id)}
                         className="bg-yellow-500 text-white px-4 py-1 rounded"
                       >
-                        Answer
+                        {t.answer}
                       </button>
                     </div>
                   )
@@ -383,19 +383,15 @@ export default function ProductPage({ addToCart }) {
             ))}
           </div>
 
-          {/* 🟡 Similar Products */}
           <RecommendedProducts
             currentProductId={product.id}
             category={product.category}
-            heading="Similar Products"
+            heading={t.similarProducts}
           />
 
-          {/* 🟣 Recently Viewed */}
           {recentViews.length > 0 && (
             <div className="mt-10">
-              <h3 className="text-lg font-semibold mb-3">
-                Recently Viewed Products
-              </h3>
+              <h3 className="text-lg font-semibold mb-3">{t.recentlyViewed}</h3>
               <div className="flex flex-wrap gap-4">
                 {recentViews.map((view) => (
                   <div

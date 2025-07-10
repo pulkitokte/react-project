@@ -16,6 +16,10 @@ import { parsePhoneNumberFromString } from "libphonenumber-js";
 import { jsPDF } from "jspdf";
 import emailjs from "emailjs-com";
 import BackButton from "../components/BackButton";
+import ApplyCoupon from "../components/ApplyCoupon"; 
+import { useLanguage } from "../context/LanguageContext";
+import { translations } from "../utils/lang";
+
 
 const supportedCountries = [
   { code: "+91", name: "India 🇮🇳" },
@@ -30,6 +34,8 @@ const supportedCountries = [
 export default function CheckoutPage({ cartItems, setCartItems }) {
   const navigate = useNavigate();
   const [user] = useAuthState(auth);
+  const { language } = useLanguage();
+  const t = translations[language];
   const [loading, setLoading] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [sendInvoiceByEmail, setSendInvoiceByEmail] = useState(false);
@@ -41,8 +47,12 @@ export default function CheckoutPage({ cartItems, setCartItems }) {
     address: "",
     phone: "",
     countryCode: "+91",
+    pincode: localStorage.getItem("pincode") || "",
   });
   const [saveAsLabel, setSaveAsLabel] = useState("");
+
+  const [discount, setDiscount] = useState(0); // ✅ Added
+  const [appliedCoupon, setAppliedCoupon] = useState(null); // ✅ Added
 
   const total = cartItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
@@ -118,6 +128,13 @@ export default function CheckoutPage({ cartItems, setCartItems }) {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // ✅ Handle coupon removal
+  const handleCouponRemove = () => {
+    setDiscount(0);
+    setAppliedCoupon(null);
+    toast.info("Coupon removed");
   };
 
   const generateInvoiceBase64 = (order) => {
@@ -196,7 +213,9 @@ export default function CheckoutPage({ cartItems, setCartItems }) {
         ...item,
         image: item.image || item.thumbnail,
       })),
-      totalPrice: total,
+      totalPrice: total - discount, // ✅ Apply discount
+      discountAmount: discount,
+      appliedCoupon: appliedCoupon?.code || null,
       timestamp,
       createdAt: new Date().toISOString(),
       userId: user?.uid || null,
@@ -256,10 +275,10 @@ export default function CheckoutPage({ cartItems, setCartItems }) {
     <div className="px-4 pt-28 pb-10 min-h-screen bg-white dark:bg-zinc-900 text-black dark:text-white">
       <div className="max-w-3xl mx-auto">
         <BackButton />
-        <h2 className="text-2xl font-semibold mb-6">🧾 Checkout</h2>
+        <h2 className="text-2xl font-semibold mb-6">🧾 {t.checkout}</h2>
 
         {cartItems.length === 0 ? (
-          <p className="text-lg">🛒 Your cart is empty.</p>
+          <p className="text-lg">🛒 {t.yourCartEmpty}</p>
         ) : (
           <>
             <div className="mb-6">
@@ -291,9 +310,41 @@ export default function CheckoutPage({ cartItems, setCartItems }) {
                 </div>
               ))}
             </div>
+            <ApplyCoupon
+              onApply={(coupon) => {
+                if (!coupon) {
+                  // Just update state without toast — avoid duplicate
+                  setDiscount(0);
+                  setAppliedCoupon(null);
+                  return;
+                }
+
+                let discountAmount = 0;
+                if (coupon.discountType === "fixed") {
+                  discountAmount = coupon.discountValue;
+                } else if (coupon.discountType === "percentage") {
+                  discountAmount = (total * coupon.discountValue) / 100;
+                }
+
+                setDiscount(discountAmount);
+                setAppliedCoupon(coupon);
+                toast.success(`🎉 Coupon "${coupon.code}" applied!`);
+              }}
+            />
 
             <h3 className="text-xl font-medium mb-4">
-              Total: ₹{total.toFixed(2)}
+              {t.total}: ₹{(total - discount).toFixed(2)}
+              {appliedCoupon && (
+                <span className="block text-sm text-green-500">
+                  ({appliedCoupon.code} applied: -₹{discount.toFixed(2)}){" "}
+                  <button
+                    onClick={handleCouponRemove}
+                    className="ml-2 text-red-500 underline text-xs"
+                  >
+                    Remove
+                  </button>
+                </span>
+              )}
             </h3>
 
             <div className="mb-4">
@@ -304,14 +355,14 @@ export default function CheckoutPage({ cartItems, setCartItems }) {
                   onChange={(e) => setUseSignupInfo(e.target.checked)}
                   className="mr-2"
                 />
-                Use saved info
+                {t.useSavedInfo}
               </label>
             </div>
 
             {addresses.length > 0 && (
               <div className="mb-4">
                 <label className="block text-sm mb-1">
-                  Select Saved Address:
+                  {t.selectSavedAddress}
                 </label>
                 <select
                   value={selectedAddressLabel}
@@ -346,6 +397,18 @@ export default function CheckoutPage({ cartItems, setCartItems }) {
                 required
                 className="w-full p-2 border rounded"
               />
+              <input
+                type="text"
+                placeholder="Pincode"
+                value={formData.pincode}
+                onChange={(e) =>
+                  setFormData({ ...formData, pincode: e.target.value })
+                }
+                maxLength={6}
+                pattern="\d{6}"
+                required
+                className="w-full p-2 border roundedl"
+              />
               <div className="flex gap-2">
                 <select
                   value={formData.countryCode}
@@ -375,7 +438,7 @@ export default function CheckoutPage({ cartItems, setCartItems }) {
               </div>
               <input
                 type="text"
-                placeholder="Label this address (e.g. Home, Office)"
+                placeholder={t.addressLabel}
                 value={saveAsLabel}
                 onChange={(e) => setSaveAsLabel(e.target.value)}
                 className="w-full p-2 border rounded"
@@ -387,14 +450,14 @@ export default function CheckoutPage({ cartItems, setCartItems }) {
                   onChange={(e) => setAgreedToTerms(e.target.checked)}
                   className="mr-2"
                 />
-                I agree to the{" "}
+                {t.agreeTerms}{" "}
                 <a
                   href="/terms"
                   className="text-blue-500 underline"
                   target="_blank"
                   rel="noreferrer"
                 >
-                  Terms and Conditions
+                  {t.termsLink}
                 </a>
               </label>
               <label className="text-sm block">
@@ -404,14 +467,14 @@ export default function CheckoutPage({ cartItems, setCartItems }) {
                   onChange={(e) => setSendInvoiceByEmail(e.target.checked)}
                   className="mr-2"
                 />
-                Email invoice to me
+                {t.emailInvoice}
               </label>
               <button
                 type="submit"
                 disabled={loading || !agreedToTerms}
                 className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 rounded disabled:opacity-50"
               >
-                {loading ? "Placing Order..." : "✅ Place Order"}
+                {loading ? t.placingOrder : t.placeOrder}
               </button>
             </form>
           </>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth } from "../firebase";
+import Loading from "../components/Loading";
 import {
   getFirestore,
   collection,
@@ -67,6 +68,8 @@ export default function ProfilePage() {
     }
   };
 
+  if (!user || !userData || loading) return <Loading />;
+  
   const getOrderStatus = (status = {}) => {
     if (status.delivered) return "Delivered";
     if (status.outForDelivery) return "Out for Delivery";

@@ -4,6 +4,8 @@ import ProductCard from "../components/ProductCard";
 import CarouselBanner from "../components/CarouselBanner";
 import Loading from "../components/Loading";
 import RecentViews from "../components/RecentViews";
+import { useLanguage } from "../context/LanguageContext";
+import { translations } from "../utils/lang";
 
 export default function Home({
   addToCart,
@@ -21,6 +23,8 @@ export default function Home({
   const [selectedRating, setSelectedRating] = useState(null);
   const [sortOption, setSortOption] = useState("");
   const [showAllBrands, setShowAllBrands] = useState(false);
+  const { language } = useLanguage();
+  const t = translations[language];
 
   const PRODUCTS_PER_PAGE = 8;
   const [currentPage, setCurrentPage] = useState(1);
@@ -122,7 +126,7 @@ export default function Home({
     >
       {username && (
         <div className="bg-green-100 text-green-800 py-2 px-4 mx-4 mt-4 rounded text-center font-semibold">
-          🎉 Welcome back, <strong>{username}</strong>!
+          🎉 {t.welcomeBack}, <strong>{username}</strong>!
         </div>
       )}
 
@@ -144,7 +148,7 @@ export default function Home({
           {/* Price Filter */}
           <div>
             <label className="font-bold block mb-1">
-              Price Range: ₹0 - ₹{priceRange}
+              {t.priceRange}: ₹0 - ₹{priceRange}
             </label>
             <input
               type="range"
@@ -159,7 +163,7 @@ export default function Home({
 
           {/* Brand Filter */}
           <div className="mt-4">
-            <h4 className="font-bold mb-1">Brand</h4>
+            <h4 className="font-bold mb-1">{t.brand}</h4>
             {(showAllBrands ? brands : brands.slice(0, 6)).map((brand, i) => (
               <label key={i} className="block text-sm">
                 <input
@@ -176,14 +180,14 @@ export default function Home({
                 className="text-blue-500 underline mt-2 text-sm"
                 onClick={() => setShowAllBrands(!showAllBrands)}
               >
-                {showAllBrands ? "View Less ▲" : "View More ▼"}
+                {showAllBrands ? t.viewLess : t.viewMore}
               </button>
             )}
           </div>
 
           {/* Rating Filter */}
           <div className="mt-6">
-            <h4 className="font-bold mb-1">Rating</h4>
+            <h4 className="font-bold mb-1">{t.rating}</h4>
             {[5, 4, 3, 2, 1].map((r) => (
               <label key={r} className="block text-sm">
                 <input
@@ -192,24 +196,24 @@ export default function Home({
                   checked={selectedRating === r}
                   onChange={() => handleRatingChange(r)}
                 />
-                {r}★ & above
+                {r}★ {t.andAbove}
               </label>
             ))}
           </div>
 
           {/* Sort By */}
           <div className="mt-6">
-            <h4 className="font-bold mb-1">Sort By</h4>
+            <h4 className="font-bold mb-1">{t.sortBy}</h4>
             <select
               value={sortOption}
               onChange={(e) => setSortOption(e.target.value)}
               className="w-full mt-1 p-2 rounded border"
             >
-              <option value="">-- Select --</option>
-              <option value="priceLowHigh">Price: Low to High</option>
-              <option value="priceHighLow">Price: High to Low</option>
-              <option value="newest">Newest</option>
-              <option value="bestsellers">Bestsellers</option>
+              <option value="">{t.select}</option>
+              <option value="priceLowHigh">{t.priceLowHigh}</option>
+              <option value="priceHighLow">{t.priceHighLow}</option>
+              <option value="newest">{t.newest}</option>
+              <option value="bestsellers">{t.bestsellers}</option>
             </select>
           </div>
         </div>
@@ -242,7 +246,7 @@ export default function Home({
               : "bg-[#febd69] hover:bg-[#f5b041]"
           }`}
         >
-          Prev
+          {t.prev}
         </button>
 
         {Array.from({ length: totalPages }, (_, i) => (
@@ -274,7 +278,7 @@ export default function Home({
               : "bg-yellow-500 hover:bg-[#f5b041]"
           }`}
         >
-          Next
+          {t.next}
         </button>
       </div>
     </div>
